@@ -1,4 +1,4 @@
-//BoyDog client-side
+//BoyDog dog (client) module
 
 'use strict';
 
@@ -157,10 +157,12 @@ var dog = function(address) {
   }
   
   //Refresh all values
-  var refresh = function() {
+  var refresh = function(element) {
+    if (!element) element = scope;
+    
     //Fetch all values from all paths
     ["html", "class", "repeat", "value"].forEach(function(tag) {
-      $(scope).find('[dog-' + tag + ']').each(function(i, el) {
+      $(element).find('[dog-' + tag + ']').each(function(i, el) {
         var path = parseAttrValue(el, 'dog-' + tag);
         if ((path.indexOf("@@@") >= 0) || (path.indexOf("$$$") >= 0)) return; //Ignore dog-repeat templates
         give({ path: path }); //A bone without val is used to get the field value
@@ -273,7 +275,7 @@ var dog = function(address) {
       htmlClean(scope); //Clean html for whitespaces and line-breaks ()
     }
     
-    normalizePaths(), refresh(), rebind();
+    //refresh(), rebind();
   }
   
   //Gets dog-[something]
@@ -293,7 +295,7 @@ var dog = function(address) {
   //The dog-give quick function stack
   var giveStack = {
     //TODO
-  };
+  }
   
   //The dog-take quick function stack
   var takeStack = {
@@ -329,6 +331,8 @@ var dog = function(address) {
     var mask;
     var tmpPath;
     
+    console.log("give bone", bone)
+    
     //Execute the last item __give
     mask = _.get(logic, bone.path);
     
@@ -337,6 +341,8 @@ var dog = function(address) {
       if (mask.__give === null) return;
       if (mask.__give) bone = mask.__give(bone);
     }
+    
+    if (bone === undefined) return;
     
     //Execute middleware functions to the actual value
     var fullPath = _.toPath(bone.path);
@@ -355,6 +361,8 @@ var dog = function(address) {
       if (mask.__give) bone = mask.__give(bone);
     }
     
+    if (bone === undefined) return;
+    
     //Execute logic top level middleware
     if (logic === null) return;
     
@@ -365,8 +373,6 @@ var dog = function(address) {
       if (logic.__give) bone = logic.__give(bone);
     }
     
-    console.log("emiting bone", bone)
-    
     if (bone === undefined) return;
     socket.emit('give', bone);
   }
@@ -376,6 +382,8 @@ var dog = function(address) {
     var mask;
     var tmpPath;
     
+    console.log("taking bone", bone)
+    
     //Execute logic top level middleware
     if (logic === null) return;
     if (logic !== undefined) {
@@ -384,6 +392,8 @@ var dog = function(address) {
       if (logic.__take === null) return;
       if (logic.__take) bone = logic.__take(bone);
     }
+    
+    if (bone === undefined) return;
     
     //Execute path to the actual value middleware
     var fullPath = _.toPath(bone.path);
@@ -402,6 +412,10 @@ var dog = function(address) {
       if (mask.__take) bone = mask.__take(bone);
     }
     
+    if (bone === undefined) return;
+    
+    bone.final = true;
+    
     //Execute the last item __take
     mask = _.get(logic, bone.path);
     
@@ -413,10 +427,12 @@ var dog = function(address) {
     }
     
     if (bone === undefined) return;
+    
     if (bone.val === undefined) { //When the server wants the client to ask for the value
-      give({ path: bone.path }); //A bone without val is used to get the field value
+      give({ path: bone.path/*, plays: bone.plays*/ }); //A bone without val is used to get the field value
     } else { //When we actually receive a value from the server
       //Process dog-html
+      
       getDogAttr("html", bone.path).each(function(k, el) {
         el = $(el);
         var msg = bone.val;
@@ -430,7 +446,8 @@ var dog = function(address) {
         //msg = {}(dogTake, msg);
         
         //Process
-        if (!msg) msg = "";
+        if (msg === undefined) msg = "";
+        
         el.html(msg); //Write html content
       })
       
@@ -552,6 +569,7 @@ var dog = function(address) {
         for (i = 1; i < parentPath.length; i++) {
           backPath += "['" + parentPath[i] + "']";
         }
+        
         give({ path: backPath })
       }
     }
@@ -564,6 +582,8 @@ var dog = function(address) {
   //Connecting to a server
   socket.on('connect', function() {
     console.log("Connected to server", address);
+    
+    normalizePaths(), refresh(), rebind();
   });
   
   //To force a full refresh from server
