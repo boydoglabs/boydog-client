@@ -206,17 +206,14 @@ var dog = function(address) {
       })
     }
     
-    //Refresh dog-value
-    if (found.value) {
+    if (found.value.length) { //Refresh dog-value
       found.value.forEach(function(item) {
         item.trigger("input");
       })
-    }
-    
-    //Refresh dog-html
-    if (found.html) {
+    } else if (found.html.length) { //Refresh dog-html
       found.html.forEach(function(item) {
-        give({ path: item.attr("dog-html") });
+        give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
+        //No action further action? (TODO: Add an event trigger when HTML changes?)
       })
     }
   }
@@ -274,7 +271,10 @@ var dog = function(address) {
               $el.attr("__dog-wait", val);
               bone.rev = newRev;
               
+              if (!bone.rev) bone.val = undefined;
               give(bone);
+              
+              
             }
           }
         })
@@ -285,6 +285,7 @@ var dog = function(address) {
     if (found.html) {
       found.html.forEach(function(item) {
         //No action (TODO: Add an action when HTML changes?)
+        
       })
     }
   }
@@ -438,7 +439,7 @@ var dog = function(address) {
         if (checkIfBuffer($el)) {
           $el.attr("__dog-wait", $el.val());
           //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val() }), socket, 1000); //Uncomment to debug latency
-          socket.send(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val(), path: bone.path }));
+          socket.send(JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val(), path: bone.path }));
         } else {
           $el.attr("__dog-rev", bone.rev);
           $el.removeAttr("__dog-wait");
@@ -459,7 +460,7 @@ var dog = function(address) {
           updateFieldWithCaret($el, msg);
           
           //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal }), socket, 1000); //Uncomment to debug latency
-          socket.send(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal, path: bone.path }));
+          socket.send(JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal, path: bone.path }));
         } else {
           updateFieldWithCaret($el, msg);
           
@@ -503,8 +504,6 @@ var dog = function(address) {
       //give({ path: backPath });
       refresh(backPath);
     }
-    
-    
     
   }
   
