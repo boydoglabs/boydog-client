@@ -209,11 +209,13 @@ var dog = function(address) {
       })
     }
     
-    if (found.value.length) { //Refresh dog-value
+    if (found.value.length) {
+       //Refresh dog-value
       found.value.forEach(function(item) {
         item.trigger("input");
       })
-    } else if (found.html.length) { //Refresh dog-html
+    } else if (found.html.length) {
+       //Refresh dog-html
       found.html.forEach(function(item) {
         give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
         //No action further action? (TODO: Add an event trigger when HTML changes?)
@@ -246,8 +248,8 @@ var dog = function(address) {
       })
     }
     
-    //Refresh dog-value
-    if (found.value) {
+    if (found.value.length) {
+      //Rebind dog-value
       found.value.forEach(function(item) {
         item.off().on("input", function(field) {
           const $el = $(field.currentTarget);
@@ -282,14 +284,11 @@ var dog = function(address) {
           }
         })
       })
-    }
-    
-    //Refresh dog-html
-    if (found.html) {
-      found.html.forEach(function(item) {
-        //No action (TODO: Add an action when HTML changes?)
+    } else if (found.html.length) {
+      //Rebind dog-html (no defined action for now on purpose)
+      /*found.html.forEach(function(item) {
         
-      })
+      })*/
     }
   }
   
