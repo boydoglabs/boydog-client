@@ -6,9 +6,7 @@ var dog = function(address) {
   var scope = "html";
   var logic = { };
   var settings = { };
-  
-  if (!address) address = window.location.href.replace("http", "ws"); //If there is no address, attempt to conect to the current URL
-  const socket = new WebSocket(address); //Create WebSocket connection
+  var socket;
   
   //
   //Libraries
@@ -144,9 +142,22 @@ var dog = function(address) {
         
         console.log("sending with latency");
         
-        socket.send(bone);
+        socketSafeSend(socket, bone);
+        
       }, latency) //Client latency
     })(bone, socket, latency);
+  }
+  
+  //Socket send with reconnect
+  function socketSafeSend(socket, data) {
+    if (socket.readyState === socket.CLOSING || socket.readyState === socket.CONNECTING) return;
+    
+    if (socket.readyState === socket.CLOSED) {
+      socketConnect();
+      console.log("DEBUG: Reconnected via socketConnect();")
+    }
+    
+    socket.send(data);
   }
   
   //Normalize attribute paths (i.e.: address.gps.lat becomes address['gps']['lat'] to avoid issues when trying to access things like user.2.name)
@@ -376,7 +387,7 @@ var dog = function(address) {
     if (bone === undefined) return;
     
     //Send bone
-    socket.send(JSON.stringify(bone));
+    socketSafeSend(socket, JSON.stringify(bone));
   }
   
   var take = function(bone) {
@@ -441,7 +452,7 @@ var dog = function(address) {
         if (checkIfBuffer($el)) {
           $el.attr("__dog-wait", $el.val());
           //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val() }), socket, 1000); //Uncomment to debug latency
-          socket.send(JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val(), path: bone.path }));
+          socketSafeSend(socket, JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val(), path: bone.path }));
         } else {
           $el.attr("__dog-rev", bone.rev);
           $el.removeAttr("__dog-wait");
@@ -462,7 +473,7 @@ var dog = function(address) {
           updateFieldWithCaret($el, msg);
           
           //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal }), socket, 1000); //Uncomment to debug latency
-          socket.send(JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal, path: bone.path }));
+          socketSafeSend(socket, JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal, path: bone.path }));
         } else {
           updateFieldWithCaret($el, msg);
           
@@ -513,32 +524,39 @@ var dog = function(address) {
   //WebSocket functions and events
   //
   
-  //Connecting to a server
-  socket.addEventListener("open", function() {
-    console.log("Connected to server", address);
+  function socketConnect() {
+    if (!address) address = window.location.href.replace("http", "ws"); //If there is no address, attempt to conect to the current URL
+    socket = new WebSocket(address); //Create WebSocket connection
     
-    (function pingPong() {
-      socket.send(">");
-      setTimeout(pingPong, 10000);
-    })();
-    
-    normalizePaths(), rebind(), refresh();
-  })
-  
-  //Listen to bones sent from server
-  socket.addEventListener("message", function(bone) {
-    //Deal with ping messages
-    if (bone.data === "<") {
-      console.log("Connection OK");
+    //Connecting to a server
+    socket.addEventListener("open", function() {
+      console.log("Connected to server", address);
       
-      return;
-    }
+      (function pingPong() {
+        socketSafeSend(socket, ">");
+        setTimeout(pingPong, 10000);
+      })();
+      
+      normalizePaths(), rebind(), refresh();
+    })
     
-    //Deal with bone messages
-    bone = JSON.parse(bone.data);
-    
-    take(bone);
-  })
+    //Listen to bones sent from server
+    socket.addEventListener("message", function(bone) {
+      //Deal with ping messages
+      if (bone.data === "<") {
+        console.log("Connection OK");
+        
+        return;
+      }
+      
+      //Deal with bone messages
+      bone = JSON.parse(bone.data);
+      
+      take(bone);
+    })
+  }
+  
+  socketConnect();
   
   //Module exposed functions
   return {
