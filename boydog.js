@@ -211,8 +211,10 @@ var dog = function(address) {
         })
       })
       
+      //TODO: Optimize following code, with path and without path
+      
       if (found.value.length) {
-         //Refresh dog-value
+       //Refresh dog-value
         found.value.forEach(function(item) {
           item.trigger("input");
         })
@@ -235,7 +237,7 @@ var dog = function(address) {
       })
       
       if (found.value.length) {
-         //Refresh dog-value
+       //Refresh dog-value
         found.value.forEach(function(item) {
           item.trigger("input");
         })
@@ -273,8 +275,6 @@ var dog = function(address) {
         })
       })
     }
-    
-    console.log("found:::", found)
     
     if (found.value.length) {
       //Rebind dog-value
@@ -314,16 +314,14 @@ var dog = function(address) {
       })
     }
     if (found.html.length) {
-      console.log("found.html.length:::", found.html);
-      
-      
       //Rebind dog-html
       found.html.forEach(function(item) {
         give({ path: item.attr("dog-html") }); //Fetch initial value
         
+        /*//TODO: Buggy code, if we write on an input and we mouseenter a dog-html AT THE SAME TIME with the same path an OT may occur
         item.mouseenter(function() {
           give({ path: item.attr("dog-html") }); //Fetch on mouse enter
-        })
+        })*/
       })
     }
   }
