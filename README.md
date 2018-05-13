@@ -2,9 +2,13 @@
 
 BoyDog client-side library
 
-> Build ultra-fast, real-time collaborative webpages in Node.JS + Socket.IO
+> Build real-time collaborative webpages
 
-Status: Development
+Status: Alpha
+
+## Getting started
+
+See *Getting started* section at www.boy.dog. This is the client-side module. Aditionally you requiere to install the [boydog module](https://www.npmjs.com/package/boydog) on your project.
 
 ## License
 
