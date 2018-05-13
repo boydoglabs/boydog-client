@@ -205,10 +205,25 @@ var dog = function(address) {
       //All values
       ["value", "html"].forEach(function(attr) {
         found[attr] = [];
+        
         $(root).find("[dog-" + attr + "]").each(function(i, el) {
           found[attr].push($(el));
         })
       })
+      
+      if (found.value.length) {
+         //Refresh dog-value
+        found.value.forEach(function(item) {
+          item.trigger("input");
+        })
+      }
+      if (found.html.length) {
+         //Refresh dog-html
+        found.html.forEach(function(item) {
+          give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
+          //No action further action? (TODO: Add an event trigger when HTML changes?)
+        })
+      }
     } else {
       //Only a specific path
       ["value", "html"].forEach(function(attr) {
@@ -218,19 +233,19 @@ var dog = function(address) {
           found[attr].push($(el));
         })
       })
-    }
-    
-    if (found.value.length) {
-       //Refresh dog-value
-      found.value.forEach(function(item) {
-        item.trigger("input");
-      })
-    } else if (found.html.length) {
-       //Refresh dog-html
-      found.html.forEach(function(item) {
-        give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
-        //No action further action? (TODO: Add an event trigger when HTML changes?)
-      })
+      
+      if (found.value.length) {
+         //Refresh dog-value
+        found.value.forEach(function(item) {
+          item.trigger("input");
+        })
+      } else if (found.html.length) {
+         //Refresh dog-html
+        found.html.forEach(function(item) {
+          give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
+          //No action further action? (TODO: Add an event trigger when HTML changes?)
+        })
+      }
     }
   }
   
@@ -258,6 +273,8 @@ var dog = function(address) {
         })
       })
     }
+    
+    console.log("found:::", found)
     
     if (found.value.length) {
       //Rebind dog-value
@@ -295,11 +312,19 @@ var dog = function(address) {
           }
         })
       })
-    } else if (found.html.length) {
-      //Rebind dog-html (no defined action for now on purpose)
-      /*found.html.forEach(function(item) {
+    }
+    if (found.html.length) {
+      console.log("found.html.length:::", found.html);
+      
+      
+      //Rebind dog-html
+      found.html.forEach(function(item) {
+        give({ path: item.attr("dog-html") }); //Fetch initial value
         
-      })*/
+        item.mouseenter(function() {
+          give({ path: item.attr("dog-html") }); //Fetch on mouse enter
+        })
+      })
     }
   }
   
