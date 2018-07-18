@@ -390,7 +390,7 @@ var dog = function(address) {
     if (bone === undefined) return;
     
     //Execute middleware functions to the actual value
-    let fullPath = _.toPath(bone.path);
+    //let fullPath = _.toPath(bone.path);
     let tmpPath;
     for (let i = 1; i < fullPath.length; i++) { //Note that we *don't* take the very last item, as this item is not part of the middleware
       //tmpPath = _.take(fullPath, i); //Verse
@@ -419,13 +419,19 @@ var dog = function(address) {
   
   var take = function(bone) {
     let fullPath = _.toPath(bone.path);
-    /*let mask;
-    
     if (bone.val === undefined) {
       refresh(bone.path);
       
       return;
     }
+    
+    /*let mask;
+    
+    //if (bone.val === undefined) {
+    //  refresh(bone.path);
+    //  
+    //  return;
+    //}
     
     //Execute logic top level middleware
     if (logic === null) return;
@@ -437,7 +443,7 @@ var dog = function(address) {
     if (bone === undefined) return;
     
     //Execute path to the actual value middleware
-    let fullPath = _.toPath(bone.path);
+    //let fullPath = _.toPath(bone.path);
     let tmpPath;
     for (var i = 1; i < fullPath.length; i++) { //Note that we *don't* take the very last item, as this item is not part of the middleware
       tmpPath = _.take(fullPath, i); //Verse
@@ -562,7 +568,7 @@ var dog = function(address) {
       
       (function pingPong() {
         socketSafeSend(socket, ">");
-        setTimeout(pingPong, 10000);
+        setTimeout(pingPong, 60000);
       })();
       
       normalizePaths(), rebind(), refresh();
@@ -570,6 +576,9 @@ var dog = function(address) {
     
     //Listen to bones sent from server
     socket.addEventListener("message", function(bone) {
+      console.log("new message bone", bone);
+      
+      
       //Deal with ping messages
       if (bone.data === "<") {
         console.log("Connection OK");
