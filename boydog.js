@@ -280,9 +280,6 @@ var dog = function(address) {
       //Rebind dog-value
       found.value.forEach(function(item) {
         item.off().on("input", function(field) {
-          console.log("input field", field);
-          
-          
           const $el = $(field.currentTarget);
           const val = $el.val();
           const path = $el.attr("dog-value");
@@ -576,9 +573,6 @@ var dog = function(address) {
     
     //Listen to bones sent from server
     socket.addEventListener("message", function(bone) {
-      console.log("new message bone", bone);
-      
-      
       //Deal with ping messages
       if (bone.data === "<") {
         console.log("Connection OK");
