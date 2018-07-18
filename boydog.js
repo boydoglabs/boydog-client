@@ -280,6 +280,9 @@ var dog = function(address) {
       //Rebind dog-value
       found.value.forEach(function(item) {
         item.off().on("input", function(field) {
+          console.log("input field", field);
+          
+          
           const $el = $(field.currentTarget);
           const val = $el.val();
           const path = $el.attr("dog-value");
@@ -374,7 +377,8 @@ var dog = function(address) {
   }
   
   var give = function(bone) {
-    let mask;
+    let fullPath = _.toPath(bone.path);
+    /*let mask;
     
     //Execute the last item __giveBone
     mask = _.get(logic, bone.path);
@@ -407,14 +411,15 @@ var dog = function(address) {
       if (logic.__giveBone === null) return;
       if (logic.__giveBone) bone = logic.__giveBone(bone);
     }
-    if (bone === undefined) return;
+    if (bone === undefined) return;*/
     
     //Send bone
     socketSafeSend(socket, JSON.stringify(bone));
   }
   
   var take = function(bone) {
-    let mask;
+    let fullPath = _.toPath(bone.path);
+    /*let mask;
     
     if (bone.val === undefined) {
       refresh(bone.path);
@@ -453,7 +458,7 @@ var dog = function(address) {
       if (mask.__takeBone === null) return;
       if (mask.__takeBone) bone = mask.__takeBone(bone);
     }
-    if (bone === undefined) return;
+    if (bone === undefined) return;*/
     
     //Process dog-value
     getDogAttr("value", bone.path).each(function(k, el) {
@@ -533,7 +538,7 @@ var dog = function(address) {
     if (parentPath.length > 0) {
       let backPath = parentPath[0];
       
-      for (i = 1; i < parentPath.length; i++) {
+      for (let i = 1; i < parentPath.length; i++) {
         backPath += "['" + parentPath[i] + "']";
       }
       
