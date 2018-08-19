@@ -334,6 +334,11 @@ var dog = function(address) {
       let valAsStr = el.val() || "";
       let msgAsStr = value || "";
       
+      if (msgAsStr.length === valAsStr.length) {
+        console.log("caret early return all equal");
+        return;
+      }
+      
       //if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString(); //Isn't this needed?
       if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString();
 
@@ -341,9 +346,17 @@ var dog = function(address) {
         diff = msgAsStr.length - valAsStr.length; //Calculate steps to move caret if needed
       }
       
+      let wholeDiff = msgAsStr.length - valAsStr.length;
+      
       el.val(value);
+      console.log("caret move caretPos + diff", diff, "wholeDiff", wholeDiff);
       el.caret(caretPos + diff);
+      
+      if (diff === 0 && wholeDiff === 0) {
+        console.log("caret 0 diff FIX");
+      }
     } else {
+      console.log("caret nomove");
       el.val(value);
     }
   }
@@ -575,7 +588,7 @@ var dog = function(address) {
     socket.addEventListener("message", function(bone) {
       //Deal with ping messages
       if (bone.data === "<") {
-        console.log("Connection OK");
+        //console.log("Connection OK");
         
         return;
       }
