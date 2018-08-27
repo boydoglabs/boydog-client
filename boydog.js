@@ -203,73 +203,34 @@ var dog = function(address) {
     let found = {};
     
     if (!path) { //To refresh all values
-      ["value", "html"].forEach(function(attr) {
-        found[attr] = [];
-        
+      ["html", "value"].forEach(function(attr) { //Note: Attributes like html must go first
         $(root).find("[dog-" + attr + "]").each(function(i, el) {
-          found[attr].push($(el));
+          found[el.getAttribute(`dog-${attr}`)] = $(el);
         })
       })
-      
-      //TODO: Optimize following code, with path and without path
-      
-      if (found.value.length) {
-       //Refresh dog-value
-        found.value.forEach(function(item) {
-          
-          
-          if (!shareType || shareType === "fifo") {
-            let bone = { path: item };
-            give(bone);
-          } else if (shareType === "fifo-hardlock") {
-            
-          } else if (shareType === "fifo-softlock") {
-            
-          } else if (shareType === "ot") {
-            item.trigger("input");
-          }
-          
-          
-        })
-      }
-      /*if (found.html.length) {
-         //Refresh dog-html
-        found.html.forEach(function(item) {
-          give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
-          //No action further action? (TODO: Add an event trigger when HTML changes?)
-        })
-      }*/
     } else { //To refresh only an specific path
-      ["value", "html"].forEach(function(attr) {
-        found[attr] = [];
-        
+      ["html", "value"].forEach(function(attr) { //Note: Attributes like html must go first
         $(root).find('[dog-' + attr + '="' + path + '"]').each(function(i, el) {
-          found[attr].push($(el));
+          found[el.getAttribute(`[dog-${attr}="${path}"]`)] = $(el);
         })
       })
-      
-      if (found.value.length) {
-       //Refresh dog-value
-        found.value.forEach(function(item) {
-          if (!shareType || shareType === "fifo") {
-            console.log('asking for a refresh-----')
-            give({ path: path }); //Ask for a refresh
-          } else if (shareType === "fifo-hardlock") {
-            
-          } else if (shareType === "fifo-softlock") {
-            
-          } else if (shareType === "ot") {
-            item.trigger("input");
-          }
-        })
-      }/* else if (found.html.length) {
-         //Refresh dog-html
-        found.html.forEach(function(item) {
-          give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
-          //No action further action? (TODO: Add an event trigger when HTML changes?)
-        })
-      }*/
     }
+    
+    //Send refresh request
+    Object.keys(found).forEach(function(path) {
+      if (!shareType || shareType === "fifo") {
+        let bone = { path: path };
+        
+        give(bone);
+      } else if (shareType === "fifo-hardlock") {
+        
+      } else if (shareType === "fifo-softlock") {
+        
+      } else if (shareType === "ot") {
+        found[path].trigger("input");
+      }
+    })
+    
   }
   
   //Will fetch all values and rebind triggers
