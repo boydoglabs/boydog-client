@@ -7,6 +7,7 @@ var dog = function(address) {
   var logic = { };
   var settings = { };
   var socket;
+  var shareType = "fifo"
   
   //
   //Libraries
@@ -201,8 +202,7 @@ var dog = function(address) {
     
     let found = {};
     
-    if (!path) {
-      //All values
+    if (!path) { //To refresh all values
       ["value", "html"].forEach(function(attr) {
         found[attr] = [];
         
@@ -216,18 +216,30 @@ var dog = function(address) {
       if (found.value.length) {
        //Refresh dog-value
         found.value.forEach(function(item) {
-          item.trigger("input");
+          
+          
+          if (!shareType || shareType === "fifo") {
+            let bone = { path: item };
+            give(bone);
+          } else if (shareType === "fifo-hardlock") {
+            
+          } else if (shareType === "fifo-softlock") {
+            
+          } else if (shareType === "ot") {
+            item.trigger("input");
+          }
+          
+          
         })
       }
-      if (found.html.length) {
+      /*if (found.html.length) {
          //Refresh dog-html
         found.html.forEach(function(item) {
           give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
           //No action further action? (TODO: Add an event trigger when HTML changes?)
         })
-      }
-    } else {
-      //Only a specific path
+      }*/
+    } else { //To refresh only an specific path
       ["value", "html"].forEach(function(attr) {
         found[attr] = [];
         
@@ -239,15 +251,24 @@ var dog = function(address) {
       if (found.value.length) {
        //Refresh dog-value
         found.value.forEach(function(item) {
-          item.trigger("input");
+          if (!shareType || shareType === "fifo") {
+            console.log('asking for a refresh-----')
+            give({ path: path }); //Ask for a refresh
+          } else if (shareType === "fifo-hardlock") {
+            
+          } else if (shareType === "fifo-softlock") {
+            
+          } else if (shareType === "ot") {
+            item.trigger("input");
+          }
         })
-      } else if (found.html.length) {
+      }/* else if (found.html.length) {
          //Refresh dog-html
         found.html.forEach(function(item) {
           give({ path: item.attr("dog-html") }); //NOTE: Should we only send one item?
           //No action further action? (TODO: Add an event trigger when HTML changes?)
         })
-      }
+      }*/
     }
   }
   
@@ -280,34 +301,44 @@ var dog = function(address) {
       //Rebind dog-value
       found.value.forEach(function(item) {
         item.off().on("input", function(field) {
+          console.log('item input', item)
           const $el = $(field.currentTarget);
           const val = $el.val();
           const path = $el.attr("dog-value");
           
           if ($el.attr("__dog-parent") === undefined) $el.attr("__dog-parent", "");
-          if ($el.attr("__dog-rev") === undefined) $el.attr("__dog-rev", "-1");
-          if ($el.attr("__dog-left") === undefined) $el.attr("__dog-left", "2");
-          
           const parent = $el.attr("__dog-parent");
-          const left = +$el.attr("__dog-left");
-          const rev = +$el.attr("__dog-rev");
-          const wait = $el.attr("__dog-wait");
           
-          let bone = { path: path, val: val, parent: parent };
-          
-          if (left > 0) {
-            let newRev = rev + 1;
-            $el.attr("__dog-rev", newRev);
-            $el.attr("__dog-left", left - 1);
+          if (!shareType || shareType === "fifo") {
+            console.log('give bone fifo')
+            let bone = { path: path, val: val, parent: parent };
+            give(bone);
+          } else if (shareType === "fifo-hardlock") {
             
-            if (wait === undefined) {
-              $el.attr("__dog-wait", val);
-              bone.rev = newRev;
+          } else if (shareType === "fifo-softlock") {
+            
+          } else if (shareType === "ot") {
+            if ($el.attr("__dog-rev") === undefined) $el.attr("__dog-rev", "-1");
+            if ($el.attr("__dog-left") === undefined) $el.attr("__dog-left", "2");
+            
+            const rev = +$el.attr("__dog-rev");
+            const left = +$el.attr("__dog-left");
+            const wait = $el.attr("__dog-wait");
+            
+            let bone = { path: path, val: val, parent: parent };
+            
+            if (left > 0) {
+              let newRev = rev + 1;
+              $el.attr("__dog-rev", newRev);
+              $el.attr("__dog-left", left - 1);
               
-              if (!bone.rev) bone.val = undefined;
-              give(bone);
-              
-              
+              if (wait === undefined) {
+                $el.attr("__dog-wait", val);
+                bone.rev = newRev;
+                
+                if (!bone.rev) bone.val = undefined;
+                give(bone);
+              }
             }
           }
         })
@@ -334,12 +365,7 @@ var dog = function(address) {
       let valAsStr = el.val() || "";
       let msgAsStr = value || "";
       
-      if (msgAsStr.length === valAsStr.length) {
-        console.log("caret early return all equal");
-        return;
-      }
-      
-      //if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString(); //Isn't this needed?
+      if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString();
       if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString();
 
       if (valAsStr.substr(0, caretPos) !== msgAsStr.substr(0, caretPos)) {
@@ -487,44 +513,54 @@ var dog = function(address) {
       //BuiltIn dog-take stack functions
       //msg = thruTakeStack(dogTake, msg);
       
-      //Process
-      if (msg === $el.attr("__dog-wait")) {
-        //When writing (contains val)
+      //Share process
+      if (!shareType || shareType === "fifo") {
+        console.log('fifo sharetype')
         $el.attr("__dog-parent", msg);
+        updateFieldWithCaret($el, msg);
+      } else if (shareType === "fifo-hardlock") {
         
-        //If there is buffer, send it to awaiting
-        if (checkIfBuffer($el)) {
-          $el.attr("__dog-wait", $el.val());
-          //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val() }), socket, 1000); //Uncomment to debug latency
-          socketSafeSend(socket, JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val(), path: bone.path }));
-        } else {
-          $el.attr("__dog-rev", bone.rev);
-          $el.removeAttr("__dog-wait");
-          $el.attr("__dog-left", "2");
-        }
-      } else {
-        if (checkIfBuffer($el)) {
-          $el.attr("__dog-rev", bone.rev);
+      } else if (shareType === "fifo-softlock") {
+        
+      } else if (shareType === "ot") {
+        if (msg === $el.attr("__dog-wait")) {
+          //When writing (contains val)
           $el.attr("__dog-parent", msg);
           
-          const a = cset($el.attr("__dog-wait"), $el.val()); //Ours
-          const b = cset($el.attr("__dog-wait"), msg); //Theirs
-          const t = b.transformAgainst(a); //Transform
-          
-          const newVal = t.apply($el.val());
-          $el.attr("__dog-wait", newVal);
-          $el.attr("__dog-rev", +$el.attr("__dog-rev") + 1);
-          updateFieldWithCaret($el, msg);
-          
-          //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal }), socket, 1000); //Uncomment to debug latency
-          socketSafeSend(socket, JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal, path: bone.path }));
+          //If there is buffer, send it to awaiting
+          if (checkIfBuffer($el)) {
+            $el.attr("__dog-wait", $el.val());
+            //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val() }), socket, 1000); //Uncomment to debug latency
+            socketSafeSend(socket, JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: $el.val(), path: bone.path }));
+          } else {
+            $el.attr("__dog-rev", bone.rev);
+            $el.removeAttr("__dog-wait");
+            $el.attr("__dog-left", "2");
+          }
         } else {
-          updateFieldWithCaret($el, msg);
-          
-          $el.attr("__dog-rev", bone.rev);
-          $el.attr("__dog-parent", msg);
-          $el.removeAttr("__dog-wait");
-          $el.attr("__dog-left", "2");
+          if (checkIfBuffer($el)) {
+            $el.attr("__dog-rev", bone.rev);
+            $el.attr("__dog-parent", msg);
+            
+            const a = cset($el.attr("__dog-wait"), $el.val()); //Ours
+            const b = cset($el.attr("__dog-wait"), msg); //Theirs
+            const t = b.transformAgainst(a); //Transform
+            
+            const newVal = t.apply($el.val());
+            $el.attr("__dog-wait", newVal);
+            $el.attr("__dog-rev", +$el.attr("__dog-rev") + 1);
+            updateFieldWithCaret($el, msg);
+            
+            //socketSendWithLatency(JSON.stringify({ rev: $el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal }), socket, 1000); //Uncomment to debug latency
+            socketSafeSend(socket, JSON.stringify({ rev: +$el.attr("__dog-rev"), parent: $el.attr("__dog-parent"), val: newVal, path: bone.path }));
+          } else {
+            updateFieldWithCaret($el, msg);
+            
+            $el.attr("__dog-rev", bone.rev);
+            $el.attr("__dog-parent", msg);
+            $el.removeAttr("__dog-wait");
+            $el.attr("__dog-left", "2");
+          }
         }
       }
     })
@@ -558,7 +594,6 @@ var dog = function(address) {
         backPath += "['" + parentPath[i] + "']";
       }
       
-      //give({ path: backPath });
       refresh(backPath);
     }
     
@@ -578,7 +613,7 @@ var dog = function(address) {
       
       (function pingPong() {
         socketSafeSend(socket, ">");
-        setTimeout(pingPong, 60000);
+        setTimeout(pingPong, 10000);
       })();
       
       normalizePaths(), rebind(), refresh();
@@ -588,7 +623,7 @@ var dog = function(address) {
     socket.addEventListener("message", function(bone) {
       //Deal with ping messages
       if (bone.data === "<") {
-        //console.log("Connection OK");
+        console.log("Connection OK");
         
         return;
       }
