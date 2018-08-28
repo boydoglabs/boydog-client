@@ -211,10 +211,12 @@ var dog = function(address) {
     } else { //To refresh only an specific path
       ["html", "value"].forEach(function(attr) { //Note: Attributes like html must go first
         $(root).find('[dog-' + attr + '="' + path + '"]').each(function(i, el) {
-          found[el.getAttribute(`[dog-${attr}="${path}"]`)] = $(el);
+          found[el.getAttribute(`dog-${attr}`)] = $(el);
         })
       })
     }
+    
+    console.log('EACH FOUND', found)
     
     //Send refresh request
     Object.keys(found).forEach(function(path) {
@@ -416,7 +418,9 @@ var dog = function(address) {
   
   var take = function(bone) {
     let fullPath = _.toPath(bone.path);
+    
     if (bone.val === undefined) {
+      console.log('no bone.val', bone)
       refresh(bone.path);
       
       return;
@@ -591,6 +595,8 @@ var dog = function(address) {
       
       //Deal with bone messages
       bone = JSON.parse(bone.data);
+      
+      console.log("takke bone", bone)
       
       take(bone);
     })
