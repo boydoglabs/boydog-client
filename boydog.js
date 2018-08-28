@@ -216,8 +216,6 @@ var dog = function(address) {
       })
     }
     
-    console.log('EACH FOUND', found)
-    
     //Send refresh request
     Object.keys(found).forEach(function(path) {
       if (!shareType || shareType === "fifo") {
@@ -264,7 +262,6 @@ var dog = function(address) {
       //Rebind dog-value
       found.value.forEach(function(item) {
         item.off().on("input", function(field) {
-          console.log('item input', item)
           const $el = $(field.currentTarget);
           const val = $el.val();
           const path = $el.attr("dog-value");
@@ -273,8 +270,8 @@ var dog = function(address) {
           const parent = $el.attr("__dog-parent");
           
           if (!shareType || shareType === "fifo") {
-            console.log('give bone fifo')
             let bone = { path: path, val: val, parent: parent };
+            
             give(bone);
           } else if (shareType === "fifo-hardlock") {
             
@@ -338,14 +335,13 @@ var dog = function(address) {
       let wholeDiff = msgAsStr.length - valAsStr.length;
       
       el.val(value);
-      console.log("caret move caretPos + diff", diff, "wholeDiff", wholeDiff);
       el.caret(caretPos + diff);
       
-      if (diff === 0 && wholeDiff === 0) {
-        console.log("caret 0 diff FIX");
-      }
+      //if (diff === 0 && wholeDiff === 0) {
+      //  console.log("caret 0 diff FIX");
+      //}
     } else {
-      console.log("caret nomove");
+      //console.log("caret nomove");
       el.val(value);
     }
   }
@@ -420,7 +416,6 @@ var dog = function(address) {
     let fullPath = _.toPath(bone.path);
     
     if (bone.val === undefined) {
-      console.log('no bone.val', bone)
       refresh(bone.path);
       
       return;
@@ -480,7 +475,6 @@ var dog = function(address) {
       
       //Share process
       if (!shareType || shareType === "fifo") {
-        console.log('fifo sharetype')
         $el.attr("__dog-parent", msg);
         updateFieldWithCaret($el, msg);
       } else if (shareType === "fifo-hardlock") {
@@ -595,8 +589,6 @@ var dog = function(address) {
       
       //Deal with bone messages
       bone = JSON.parse(bone.data);
-      
-      console.log("takke bone", bone)
       
       take(bone);
     })
