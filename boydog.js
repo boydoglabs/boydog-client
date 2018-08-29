@@ -7,7 +7,6 @@ var dog = function(address) {
   var logic = { };
   var settings = { };
   var socket;
-  var shareType = "fifo"
   
   //
   //Libraries
@@ -218,15 +217,17 @@ var dog = function(address) {
     
     //Send refresh request
     Object.keys(found).forEach(function(path) {
-      if (!shareType || shareType === "fifo") {
+      const kind = found[path].attr('dog-kind');
+      
+      if (!kind || kind === "fifo") {
         let bone = { path: path };
         
         give(bone);
-      } else if (shareType === "fifo-hardlock") {
+      } else if (kind === "fifo-hardlock") {
         
-      } else if (shareType === "fifo-softlock") {
+      } else if (kind === "fifo-softlock") {
         
-      } else if (shareType === "ot") {
+      } else if (kind === "ot") {
         found[path].trigger("input");
       }
     })
@@ -265,19 +266,20 @@ var dog = function(address) {
           const $el = $(field.currentTarget);
           const val = $el.val();
           const path = $el.attr("dog-value");
+          const kind = $el.attr('dog-kind');
           
           if ($el.attr("__dog-parent") === undefined) $el.attr("__dog-parent", "");
           const parent = $el.attr("__dog-parent");
           
-          if (!shareType || shareType === "fifo") {
+          if (!kind || kind === "fifo") {
             let bone = { path: path, val: val, parent: parent };
             
             give(bone);
-          } else if (shareType === "fifo-hardlock") {
+          } else if (kind === "fifo-hardlock") {
             
-          } else if (shareType === "fifo-softlock") {
+          } else if (kind === "fifo-softlock") {
             
-          } else if (shareType === "ot") {
+          } else if (kind === "ot") {
             if ($el.attr("__dog-rev") === undefined) $el.attr("__dog-rev", "-1");
             if ($el.attr("__dog-left") === undefined) $el.attr("__dog-left", "2");
             
@@ -413,6 +415,7 @@ var dog = function(address) {
   }
   
   var take = function(bone) {
+    console.log('TAKKE, bone kind', bone)
     let fullPath = _.toPath(bone.path);
     
     if (bone.val === undefined) {
@@ -474,14 +477,14 @@ var dog = function(address) {
       //msg = thruTakeStack(dogTake, msg);
       
       //Share process
-      if (!shareType || shareType === "fifo") {
+      if (!bone.kind || bone.kind === "fifo") {
         $el.attr("__dog-parent", msg);
         updateFieldWithCaret($el, msg);
-      } else if (shareType === "fifo-hardlock") {
+      } else if (bone.kind === "fifo-hardlock") {
         
-      } else if (shareType === "fifo-softlock") {
+      } else if (bone.kind === "fifo-softlock") {
         
-      } else if (shareType === "ot") {
+      } else if (bone.kind === "ot") {
         if (msg === $el.attr("__dog-wait")) {
           //When writing (contains val)
           $el.attr("__dog-parent", msg);
