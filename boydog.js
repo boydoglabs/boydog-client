@@ -415,7 +415,6 @@ var dog = function(address) {
   }
   
   var take = function(bone) {
-    console.log('TAKKE, bone kind', bone)
     let fullPath = _.toPath(bone.path);
     
     if (bone.val === undefined) {
