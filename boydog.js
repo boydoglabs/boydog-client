@@ -374,8 +374,9 @@ var dog = function(address) {
   }
   
   var give = function(bone) {
-    let fullPath = _.toPath(bone.path);
     let mask;
+    let tmpPath;
+    let fullPath = _.toPath(bone.path);
     
     //Execute the last item __giveBone
     mask = _.get(logic, bone.path);
@@ -388,7 +389,6 @@ var dog = function(address) {
     
     //Execute middleware functions to the actual value
     //let fullPath = _.toPath(bone.path);
-    let tmpPath;
     for (let i = 1; i < fullPath.length; i++) { //Note that we *don't* take the very last item, as this item is not part of the middleware
       //tmpPath = _.take(fullPath, i); //Verse
       tmpPath = _.take(fullPath, (fullPath.length - i)); //Inverse
@@ -415,8 +415,9 @@ var dog = function(address) {
   }
   
   var take = function(bone) {
-    let fullPath = _.toPath(bone.path);
     let mask;
+    let tmpPath;
+    let fullPath = _.toPath(bone.path);
     
     if (bone.val === undefined) {
       refresh(bone.path);
@@ -434,8 +435,6 @@ var dog = function(address) {
     if (bone === undefined) return;
     
     //Execute path to the actual value middleware
-    //let fullPath = _.toPath(bone.path);
-    let tmpPath;
     for (var i = 1; i < fullPath.length; i++) { //Note that we *don't* take the very last item, as this item is not part of the middleware
       tmpPath = _.take(fullPath, i); //Verse
       //tmpPath = _.take(fullPath, (fullPath.length - i)); //Inverse
