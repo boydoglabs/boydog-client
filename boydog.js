@@ -375,7 +375,7 @@ var dog = function(address) {
   
   var give = function(bone) {
     let fullPath = _.toPath(bone.path);
-    /*let mask;
+    let mask;
     
     //Execute the last item __giveBone
     mask = _.get(logic, bone.path);
@@ -408,7 +408,7 @@ var dog = function(address) {
       if (logic.__giveBone === null) return;
       if (logic.__giveBone) bone = logic.__giveBone(bone);
     }
-    if (bone === undefined) return;*/
+    if (bone === undefined) return;
     
     //Send bone
     socketSafeSend(socket, JSON.stringify(bone));
@@ -416,20 +416,13 @@ var dog = function(address) {
   
   var take = function(bone) {
     let fullPath = _.toPath(bone.path);
+    let mask;
     
     if (bone.val === undefined) {
       refresh(bone.path);
       
       return;
     }
-    
-    /*let mask;
-    
-    //if (bone.val === undefined) {
-    //  refresh(bone.path);
-    //  
-    //  return;
-    //}
     
     //Execute logic top level middleware
     if (logic === null) return;
@@ -462,7 +455,7 @@ var dog = function(address) {
       if (mask.__takeBone === null) return;
       if (mask.__takeBone) bone = mask.__takeBone(bone);
     }
-    if (bone === undefined) return;*/
+    if (bone === undefined) return;
     
     //Process dog-value
     getDogAttr("value", bone.path).each(function(k, el) {
