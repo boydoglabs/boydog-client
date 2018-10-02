@@ -136,16 +136,16 @@ var dog = function(address) {
   //
   
   //Send patch with latency (for debugging only, chrome throttle does not work for WebSockets)
-  function socketSendWithLatency(bone, socket, latency) {
-    (function(data, socket, latency) {
+  function socketSendWithLatency(socket, data, latency) {
+    (function(socket, data, latency) {
       setTimeout(function() {
         
         console.log("sending with latency");
         
-        socketSafeSend(socket, bone);
+        socketSafeSend(socket, data);
         
       }, latency) //Client latency
-    })(bone, socket, latency);
+    })(socket, data, latency);
   }
   
   //Socket send with reconnect
@@ -322,28 +322,56 @@ var dog = function(address) {
   //Will update a field taking care of the caret position so that it does not move from where the user was writing
   function updateFieldWithCaret(el, value) {
     if (el[0] === document.activeElement) { //If I'm editing an element that needs to be refreshed
-      let caretPos = el.caret(); //Save caret position
-      let diff = 0; //Assume we don't need to move caret
-      let valAsStr = el.val() || "";
-      let msgAsStr = value || "";
+      const kind = el.attr('dog-kind');
       
-      if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString();
-      if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString();
+      if (!kind || kind === "fifo") {
+        console.log('fifoupdate');
+        
+        let caretPos = el.caret(); //Save caret position
+        let valAsStr = el.val() || "";
+        let msgAsStr = value || "";
+        
+        if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString(); //Current text on dog
+        if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString(); //Value from boy
+        
+        if (valAsStr.length >= msgAsStr.length) {
+          console.log('---------------BIGGER or eq')
+          
+          el.val(msgAsStr + valAsStr.substring(msgAsStr.length));
+          el.caret(caretPos);
+        } else {
+          console.log('---------------lower')
+        }
+      } else if (kind === "fifo-hardlock") {
+        
+      } else if (kind === "fifo-softlock") {
+        
+      } else if (kind === "ot") {
+        console.log("caret move", $(el[0]));
+        
+        let caretPos = el.caret(); //Save caret position
+        let diff = 0; //Assume we don't need to move caret
+        let valAsStr = el.val() || "";
+        let msgAsStr = value || "";
+        
+        if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString();
+        if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString();
 
-      if (valAsStr.substr(0, caretPos) !== msgAsStr.substr(0, caretPos)) {
-        diff = msgAsStr.length - valAsStr.length; //Calculate steps to move caret if needed
+        if (valAsStr.substr(0, caretPos) !== msgAsStr.substr(0, caretPos)) {
+          diff = msgAsStr.length - valAsStr.length; //Calculate steps to move caret if needed
+        }
+        
+        let wholeDiff = msgAsStr.length - valAsStr.length;
+        
+        el.val(value);
+        el.caret(caretPos + diff);
+        
+        //if (diff === 0 && wholeDiff === 0) {
+        //  console.log("caret 0 diff FIX");
+        //}
       }
-      
-      let wholeDiff = msgAsStr.length - valAsStr.length;
-      
-      el.val(value);
-      el.caret(caretPos + diff);
-      
-      //if (diff === 0 && wholeDiff === 0) {
-      //  console.log("caret 0 diff FIX");
-      //}
     } else {
-      //console.log("caret nomove");
+      console.log("caret nomove");
       el.val(value);
     }
   }
@@ -410,7 +438,7 @@ var dog = function(address) {
     if (bone === undefined) return;
     
     //Send bone
-    socketSafeSend(socket, JSON.stringify(bone));
+    socketSendWithLatency(socket, JSON.stringify(bone), 1000);
   }
   
   var take = function(bone) {
@@ -564,7 +592,7 @@ var dog = function(address) {
       console.log("Connected to server", address);
       
       (function pingPong() {
-        socketSafeSend(socket, ">");
+        socketSendWithLatency(socket, ">", 1000);
         setTimeout(pingPong, 60000);
       })();
       
