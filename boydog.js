@@ -335,12 +335,8 @@ var dog = function(address) {
         if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString(); //Value from boy
         
         if (valAsStr.length >= msgAsStr.length) {
-          console.log('---------------BIGGER or eq')
-          
           el.val(msgAsStr + valAsStr.substring(msgAsStr.length));
           el.caret(caretPos);
-        } else {
-          console.log('---------------lower')
         }
       } else if (kind === "fifo-hardlock") {
         
@@ -496,8 +492,21 @@ var dog = function(address) {
       
       //Share process
       if (!bone.kind || bone.kind === "fifo") {
-        $el.attr("__dog-parent", msg);
-        updateFieldWithCaret($el, msg);
+        let rev0 = $el.attr('__dog-parent') || '';
+        let revA = $el.text();
+        let revB = msg;
+        
+        console.log('$el', $el)
+        
+        var csA = cset(rev0, revA);
+        var csB = cset(rev0, revB);
+        
+        var transformedCsA = csA.transformAgainst(csB);
+        var transformedMsg = transformedCsA.apply(revB);
+        
+        $el.attr("__dog-parent", transformedMsg);
+        
+        updateFieldWithCaret($el, transformedMsg);
       } else if (bone.kind === "fifo-hardlock") {
         
       } else if (bone.kind === "fifo-softlock") {
