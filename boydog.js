@@ -160,7 +160,7 @@ var dog = function(address) {
   function normalizePaths() {
     ["dog-id", "dog-class", "dog-value", "dog-html", "dog-click"].forEach(
       function(attrName) {
-        $("[" + attrName + "]").each(function(i, el) {
+        $(`[${ attrName }]`).each(function(i, el) {
           let attr = $(el).attr(attrName);
           attr = _.toPath(attr);
 
@@ -170,10 +170,10 @@ var dog = function(address) {
 
               if (item[0] === "#" || item[0] === ".") return item;
 
-              return "'" + item + "'";
+              return `'${ item }'`;
             });
 
-            attr = attr.shift() + "[" + attr.join("][") + "]";
+            attr = attr.shift() + `[${ attr.join("][") }]`;
           } else {
             attr = attr.shift();
           }
@@ -186,7 +186,7 @@ var dog = function(address) {
 
   //Gets dog-[attrName]="attrValue" elements
   function getDogAttr(attrName, attrValue) {
-    const el = $("[dog-" + attrName + '="' + attrValue + '"]');
+    const el = $(`[dog-${ attrName }="${ attrValue }"]`);
 
     //TODO: Implement getting the values of elements that use BoyDog variables (for example dog-value="user.{myName}.name")
 
@@ -204,9 +204,9 @@ var dog = function(address) {
       ["html", "value"].forEach(function(attr) {
         //Note: Attributes like html must go first
         $(root)
-          .find("[dog-" + attr + "]")
+          .find(`[dog-${ attr }]`)
           .each(function(i, el) {
-            found[el.getAttribute(`dog-${attr}`)] = $(el);
+            found[el.getAttribute(`dog-${ attr }`)] = $(el);
           });
       });
     } else {
@@ -214,7 +214,7 @@ var dog = function(address) {
       ["html", "value"].forEach(function(attr) {
         //Note: Attributes like html must go first
         $(root)
-          .find("[dog-" + attr + '="' + path + '"]')
+          .find(`[dog-${ attr }="${ path }"]`)
           .each(function(i, el) {
             found[el.getAttribute(`dog-${attr}`)] = $(el);
           });
@@ -250,7 +250,7 @@ var dog = function(address) {
       ["value", "html"].forEach(function(attr) {
         found[attr] = [];
         $(root)
-          .find("[dog-" + attr + "]")
+          .find(`[dog-${ attr }]`)
           .each(function(i, el) {
             found[attr].push($(el));
           });
@@ -261,7 +261,7 @@ var dog = function(address) {
         found[attr] = [];
 
         $(root)
-          .find("[dog-" + attr + '="' + path + '"]')
+          .find(`[dog-${ attr }="${ path }"]`)
           .each(function(i, el) {
             found[attr].push($(el));
           });
