@@ -4,7 +4,8 @@
   "description": "Build ultra-fast, real-time collaborative webpages in Node.JS + Socket.IO. Client-side module.",
   "main": "boydog.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --check \"./**/*.?(js)\""
   },
   "repository": {
     "type": "git",
@@ -25,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/boydoglabs/boydog-client/issues"
   },
-  "homepage": "https://github.com/boydoglabs/boydog-client#readme"
+  "homepage": "https://github.com/boydoglabs/boydog-client#readme",
+  "devDependencies": {
+    "prettier": "1.16.4"
+  }
 }
