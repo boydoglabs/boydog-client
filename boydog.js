@@ -289,19 +289,20 @@ var dog = function(address) {
       const kind = el.attr('dog-kind');
       
       if (!kind || kind === "fifo") {
-        console.log('fifoupdate');
-        
         let caretPos = el.caret(); //Save caret position
-        let valAsStr = el.val() || "";
-        let msgAsStr = value || "";
+        let valAsStr = el.val() || ""; //The current message
+        let msgAsStr = value || ""; //The message we want to write
         
         if (_.isNumber(valAsStr)) valAsStr = valAsStr.toString(); //Current text on dog
         if (_.isNumber(msgAsStr)) msgAsStr = msgAsStr.toString(); //Value from boy
         
-        if (valAsStr.length >= msgAsStr.length) {
-          el.val(msgAsStr + valAsStr.substring(msgAsStr.length));
-          el.caret(caretPos);
+        if (valAsStr.substring(0, caretPos) === msgAsStr.substring(0, caretPos)) {
+          //Do nothing since we are writing on after the current caret position
+        } else {
+          caretPos += msgAsStr.length - valAsStr.length;
         }
+        el.val(msgAsStr);
+        el.caret(caretPos);
       } else if (kind === "fifo-hardlock") {
         //Not yet implemented
       } else if (kind === "fifo-softlock") {
