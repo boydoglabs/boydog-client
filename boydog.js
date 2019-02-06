@@ -471,7 +471,7 @@ var dog = function(address) {
       (function pingPong() {
         //socketSendWithLatency(socket, ">", 1000);  //Use for debugging purposes only
         socketSafeSend(socket, ">");
-        setTimeout(pingPong, 10000);
+        setTimeout(pingPong, 60000);
       })();
       
       normalizePaths(), rebind(), refresh();
