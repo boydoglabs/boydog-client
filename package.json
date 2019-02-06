@@ -5,7 +5,7 @@
   "main": "boydog.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write \"./**/*.?(js)\""
+    "format": "prettier --write \"boydog.js\""
   },
   "repository": {
     "type": "git",
