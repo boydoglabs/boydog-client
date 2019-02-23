@@ -5,7 +5,7 @@
   "main": "boydog.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write \"boydog.js\""
+    "format": "prettier --write \"boydog-client.js\" \"utils.js\""
   },
   "repository": {
     "type": "git",
@@ -35,6 +35,6 @@
   },
   "homepage": "https://github.com/boydoglabs/boydog-client#readme",
   "devDependencies": {
-    "prettier": "1.16.4"
+    "prettier": "^1.16.4"
   }
 }
