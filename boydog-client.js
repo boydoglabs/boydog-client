@@ -29,34 +29,33 @@ var boydog = function(client) {
   })*/
 
   var restart = function() {
-    console.log("reloading boydogxyz", utils);
     utils.normalize();
-    
+
     var els = utils.getDogDOMElements();
-    console.log("els", els);
-    
+
     let attr = "dog-value";
     els[attr].each((i, domEl) => {
       let path = domEl.getAttribute(attr);
-      console.log("domEl", domEl, path);
-      
+
       documentScope[path] = connection.get("default", path);
       documentScope[path].subscribe(function(err) {
         if (err) throw err;
 
-        let binding = new stringBinding(domEl, documentScope[path], ["content"]);
+        let binding = new stringBinding(domEl, documentScope[path], [
+          "content"
+        ]);
         try {
           binding.setup();
-        } catch(e) {
+        } catch (e) {
           if (e instanceof TypeError) {
-            console.log("retrying to connect");
+            console.log("BoyDog couoldn't connect. Retrying in a few seconds.");
             setTimeout(function() {
-              binding.setup();
+              binding.setup(); //Try again if we couldn't bind tags
             }, 3000);
           }
         }
       });
-    })
+    });
   };
 
   var attach = function(_scope) {
