@@ -4,7 +4,7 @@
   "description": "Build ultra-fast, real-time collaborative webpages in Node.JS + Socket.IO. Client-side module.",
   "main": "boydog.js",
   "scripts": {
-    "format": "prettier --write \"boydog-client.js\" \"utils.js\"",
+    "format": "prettier --write \"./boydog-client.js\" \"./utils.js\"",
     "build": "browserify ./boydog-client.js -o ./build/boydog-client.js"
   },
   "repository": {

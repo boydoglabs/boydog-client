@@ -769,69 +769,7 @@ var boydog = function(client) {
 
 window.boydog = boydog;
 
-},{"./utils.js":4,"reconnecting-websocket":12,"sharedb-string-binding":13,"sharedb/lib/client":16}],4:[function(require,module,exports){
-"use strict";
-
-const $ = require("cash-dom");
-const _ = require("lodash");
-const allAttributes = [
-  "dog-id",
-  "dog-class",
-  "dog-value",
-  "dog-html",
-  "dog-click"
-];
-
-//Normalize string like "address.gps.lat" to "address['gps']['lat']" to avoid issues when trying to access fields like "user.2.name"
-var normalizeAttrString = function(attr) {
-  attr = _.toPath(attr);
-
-  if (attr.length > 1) {
-    attr = _.map(attr, function(item, i) {
-      if (i === 0) return item;
-
-      if (item[0] === "#" || item[0] === ".") return item;
-
-      return `'${item}'`;
-    });
-
-    attr = attr.shift() + `[${attr.join("][")}]`;
-  } else {
-    attr = attr.shift();
-  }
-
-  return attr;
-};
-
-//Get All [dog-value, dog-id, etc] as DOM elements
-var getDogDOMElements = function() {
-  let found = {};
-
-  allAttributes.forEach(attr => {
-    let el = $(`[${attr}]`);
-    if (el.length === 0) return;
-    found[attr] = el;
-  });
-
-  return found;
-};
-
-//Normalize all dog elements paths
-var normalize = function() {
-  let els = getDogDOMElements();
-
-  Object.keys(els).forEach(attrName => {
-    els[attrName].each((k, el) => {
-      let newAttr = normalizeAttrString($(el).attr(attrName));
-
-      $(el).attr(attrName, newAttr);
-    });
-  });
-};
-
-module.exports = { normalize, normalizeAttrString, getDogDOMElements };
-
-},{"cash-dom":5,"lodash":6}],5:[function(require,module,exports){
+},{"./utils.js":28,"reconnecting-websocket":11,"sharedb-string-binding":12,"sharedb/lib/client":15}],4:[function(require,module,exports){
 /* MIT https://github.com/kenwheeler/cash */
 (function(){
 "use strict";
@@ -2265,7 +2203,7 @@ fn.siblings = function () {
 // @optional traversal/index.js
 // @require core/index.js
 })();
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -19376,7 +19314,7 @@ fn.siblings = function () {
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 // ISC @ Julien Fontanet
 
 'use strict'
@@ -19525,7 +19463,7 @@ function makeError (constructor, super_) {
 exports = module.exports = makeError
 exports.BaseError = BaseError
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // These methods let you build a transform function from a transformComponent
 // function for OT types like JSON0 in which operations are lists of components
 // and transforming them requires N^2 work. I find it kind of nasty that I need
@@ -19605,7 +19543,7 @@ function bootstrapTransform(type, transformComponent, checkValidOp, append) {
   };
 };
 
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // Only the JSON type is exported, because the text type is deprecated
 // otherwise. (If you want to use it somewhere, you're welcome to pull it out
 // into a separate module that json0 can depend on).
@@ -19614,7 +19552,7 @@ module.exports = {
   type: require('./json0')
 };
 
-},{"./json0":10}],10:[function(require,module,exports){
+},{"./json0":9}],9:[function(require,module,exports){
 /*
  This is the implementation of the JSON OT type.
 
@@ -20279,7 +20217,7 @@ json.registerSubtype(text);
 module.exports = json;
 
 
-},{"./bootstrapTransform":8,"./text0":11}],11:[function(require,module,exports){
+},{"./bootstrapTransform":7,"./text0":10}],10:[function(require,module,exports){
 // DEPRECATED!
 //
 // This type works, but is not exported. Its included here because the JSON0
@@ -20537,7 +20475,7 @@ text.invert = function(op) {
 
 require('./bootstrapTransform')(text, transformComponent, checkValidOp, append);
 
-},{"./bootstrapTransform":8}],12:[function(require,module,exports){
+},{"./bootstrapTransform":7}],11:[function(require,module,exports){
 "use strict";
 ;
 ;
@@ -20754,7 +20692,7 @@ var ReconnectingWebsocket = function (url, protocols, options) {
 };
 module.exports = ReconnectingWebsocket;
 
-},{}],13:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var TextDiffBinding = require('text-diff-binding');
 
 module.exports = StringBinding;
@@ -20865,7 +20803,7 @@ function isSubpath(path, testPath) {
   return true;
 }
 
-},{"text-diff-binding":28}],14:[function(require,module,exports){
+},{"text-diff-binding":27}],13:[function(require,module,exports){
 (function (process){
 var Doc = require('./doc');
 var Query = require('./query');
@@ -21546,7 +21484,7 @@ Connection.prototype._handleSnapshotFetch = function (error, message) {
 };
 
 }).call(this,require('_process'))
-},{"../emitter":21,"../error":22,"../logger":23,"../types":26,"../util":27,"./doc":15,"./query":17,"./snapshot-request/snapshot-timestamp-request":19,"./snapshot-request/snapshot-version-request":20,"_process":2}],15:[function(require,module,exports){
+},{"../emitter":20,"../error":21,"../logger":22,"../types":25,"../util":26,"./doc":14,"./query":16,"./snapshot-request/snapshot-timestamp-request":18,"./snapshot-request/snapshot-version-request":19,"_process":2}],14:[function(require,module,exports){
 (function (process){
 var emitter = require('../emitter');
 var logger = require('../logger');
@@ -22470,12 +22408,9 @@ Doc.prototype._hardRollback = function(err) {
 };
 
 Doc.prototype._clearInflightOp = function(err) {
-  var inflightOp = this.inflightOp;
+  var called = callEach(this.inflightOp.callbacks, err);
 
   this.inflightOp = null;
-
-  var called = callEach(inflightOp.callbacks, err);
-
   this.flush();
   this._emitNothingPending();
 
@@ -22495,7 +22430,7 @@ function callEach(callbacks, err) {
 }
 
 }).call(this,require('_process'))
-},{"../emitter":21,"../error":22,"../logger":23,"../types":26,"_process":2}],16:[function(require,module,exports){
+},{"../emitter":20,"../error":21,"../logger":22,"../types":25,"_process":2}],15:[function(require,module,exports){
 exports.Connection = require('./connection');
 exports.Doc = require('./doc');
 exports.Error = require('../error');
@@ -22503,7 +22438,7 @@ exports.Query = require('./query');
 exports.types = require('../types');
 exports.logger = require('../logger');
 
-},{"../error":22,"../logger":23,"../types":26,"./connection":14,"./doc":15,"./query":17}],17:[function(require,module,exports){
+},{"../error":21,"../logger":22,"../types":25,"./connection":13,"./doc":14,"./query":16}],16:[function(require,module,exports){
 (function (process){
 var emitter = require('../emitter');
 
@@ -22706,7 +22641,7 @@ Query.prototype._handleExtra = function(extra) {
 };
 
 }).call(this,require('_process'))
-},{"../emitter":21,"_process":2}],18:[function(require,module,exports){
+},{"../emitter":20,"_process":2}],17:[function(require,module,exports){
 var Snapshot = require('../../snapshot');
 var emitter = require('../../emitter');
 
@@ -22762,7 +22697,7 @@ SnapshotRequest.prototype._handleResponse = function (error, message) {
   this.callback(null, snapshot);
 };
 
-},{"../../emitter":21,"../../snapshot":25}],19:[function(require,module,exports){
+},{"../../emitter":20,"../../snapshot":24}],18:[function(require,module,exports){
 var SnapshotRequest = require('./snapshot-request');
 var util = require('../../util');
 
@@ -22790,7 +22725,7 @@ SnapshotTimestampRequest.prototype._message = function () {
   };
 };
 
-},{"../../util":27,"./snapshot-request":18}],20:[function(require,module,exports){
+},{"../../util":26,"./snapshot-request":17}],19:[function(require,module,exports){
 var SnapshotRequest = require('./snapshot-request');
 var util = require('../../util');
 
@@ -22818,7 +22753,7 @@ SnapshotVersionRequest.prototype._message = function () {
   };
 };
 
-},{"../../util":27,"./snapshot-request":18}],21:[function(require,module,exports){
+},{"../../util":26,"./snapshot-request":17}],20:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter;
 
 exports.EventEmitter = EventEmitter;
@@ -22830,7 +22765,7 @@ function mixin(Constructor) {
   }
 }
 
-},{"events":1}],22:[function(require,module,exports){
+},{"events":1}],21:[function(require,module,exports){
 var makeError = require('make-error');
 
 function ShareDBError(code, message) {
@@ -22842,12 +22777,12 @@ makeError(ShareDBError);
 
 module.exports = ShareDBError;
 
-},{"make-error":7}],23:[function(require,module,exports){
+},{"make-error":6}],22:[function(require,module,exports){
 var Logger = require('./logger');
 var logger = new Logger();
 module.exports = logger;
 
-},{"./logger":24}],24:[function(require,module,exports){
+},{"./logger":23}],23:[function(require,module,exports){
 var SUPPORTED_METHODS = [
   'info',
   'warn',
@@ -22870,7 +22805,7 @@ Logger.prototype.setMethods = function (overrides) {
   });
 };
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 module.exports = Snapshot;
 function Snapshot(id, version, type, data, meta) {
   this.id = id;
@@ -22880,7 +22815,7 @@ function Snapshot(id, version, type, data, meta) {
   this.m = meta;
 }
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 exports.defaultType = require('ot-json0').type;
 
@@ -22893,7 +22828,7 @@ exports.register = function(type) {
 
 exports.register(exports.defaultType);
 
-},{"ot-json0":9}],27:[function(require,module,exports){
+},{"ot-json0":8}],26:[function(require,module,exports){
 
 exports.doNothing = doNothing;
 function doNothing() {}
@@ -22919,7 +22854,7 @@ exports.isValidTimestamp = function (timestamp) {
   return exports.isValidVersion(timestamp);
 };
 
-},{}],28:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 module.exports = TextDiffBinding;
 
 function TextDiffBinding(element) {
@@ -23021,4 +22956,66 @@ TextDiffBinding.prototype.update = function() {
   this.element.value = value;
 };
 
-},{}]},{},[3]);
+},{}],28:[function(require,module,exports){
+"use strict";
+
+const $ = require("cash-dom");
+const _ = require("lodash");
+const allAttributes = [
+  "dog-id",
+  "dog-class",
+  "dog-value",
+  "dog-html",
+  "dog-click"
+];
+
+//Normalize string like "address.gps.lat" to "address['gps']['lat']" to avoid issues when trying to access fields like "user.2.name"
+var normalizeAttrString = function(attr) {
+  attr = _.toPath(attr);
+
+  if (attr.length > 1) {
+    attr = _.map(attr, function(item, i) {
+      if (i === 0) return item;
+
+      if (item[0] === "#" || item[0] === ".") return item;
+
+      return `'${item}'`;
+    });
+
+    attr = attr.shift() + `[${attr.join("][")}]`;
+  } else {
+    attr = attr.shift();
+  }
+
+  return attr;
+};
+
+//Get All [dog-value, dog-id, etc] as DOM elements
+var getDogDOMElements = function() {
+  let found = {};
+
+  allAttributes.forEach(attr => {
+    let el = $(`[${attr}]`);
+    if (el.length === 0) return;
+    found[attr] = el;
+  });
+
+  return found;
+};
+
+//Normalize all dog elements paths
+var normalize = function() {
+  let els = getDogDOMElements();
+
+  Object.keys(els).forEach(attrName => {
+    els[attrName].each((k, el) => {
+      let newAttr = normalizeAttrString($(el).attr(attrName));
+
+      $(el).attr(attrName, newAttr);
+    });
+  });
+};
+
+module.exports = { normalize, normalizeAttrString, getDogDOMElements };
+
+},{"cash-dom":4,"lodash":5}]},{},[3]);
