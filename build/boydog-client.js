@@ -710,6 +710,8 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],3:[function(require,module,exports){
+//Boydog client module
+
 "use strict";
 
 const shareDB = require("sharedb/lib/client");
@@ -725,47 +727,34 @@ var boydog = function(client) {
   let socket = new reconnectingWebSocket("ws://" + client);
   let connection = new shareDB.Connection(socket);
 
-  /*//Create local Doc instance mapped to 'examples' collection document with id 'textarea'
-  let element = document.querySelector("input");
-  let doc = connection.get("default", "randomABC");
-  doc.subscribe(function(err) {
-    if (err) throw err;
-
-    let binding = new stringBinding(element, doc, ["content"]);
-    binding.setup();
-  });*/
-
-  /*//Working event example
-  doc.on("op", (o, s) => {
-    console.log("op", o, s);
-  })*/
-
   var restart = function() {
     utils.normalize();
-    
+
     var els = utils.getDogDOMElements();
 
     let attr = "dog-value";
     els[attr].each((i, domEl) => {
       let path = domEl.getAttribute(attr);
-      
+
       documentScope[path] = connection.get("default", path);
       documentScope[path].subscribe(function(err) {
         if (err) throw err;
 
-        let binding = new stringBinding(domEl, documentScope[path], ["content"]);
+        let binding = new stringBinding(domEl, documentScope[path], [
+          "content"
+        ]);
         try {
           binding.setup();
-        } catch(e) {
+        } catch (e) {
           if (e instanceof TypeError) {
-            console.log("BoyDog couoldn't connect. Retrying in a few seconds.");
+            console.warn("BoyDog couoldn't connect. Retrying in a few seconds.");
             setTimeout(function() {
               binding.setup(); //Try again if we couldn't bind tags
             }, 3000);
           }
         }
       });
-    })
+    });
   };
 
   var attach = function(_scope) {
@@ -777,7 +766,6 @@ var boydog = function(client) {
 };
 
 window.boydog = boydog;
-
 },{"./utils.js":20,"reconnecting-websocket":4,"sharedb-string-binding":5,"sharedb/lib/client":8}],4:[function(require,module,exports){
 "use strict";
 ;

@@ -1,3 +1,5 @@
+//Boydog client module
+
 "use strict";
 
 const shareDB = require("sharedb/lib/client");
@@ -12,21 +14,6 @@ var boydog = function(client) {
   if (!client) client = window.location.host;
   let socket = new reconnectingWebSocket("ws://" + client);
   let connection = new shareDB.Connection(socket);
-
-  /*//Create local Doc instance mapped to 'examples' collection document with id 'textarea'
-  let element = document.querySelector("input");
-  let doc = connection.get("default", "randomABC");
-  doc.subscribe(function(err) {
-    if (err) throw err;
-
-    let binding = new stringBinding(element, doc, ["content"]);
-    binding.setup();
-  });*/
-
-  /*//Working event example
-  doc.on("op", (o, s) => {
-    console.log("op", o, s);
-  })*/
 
   var restart = function() {
     utils.normalize();
@@ -48,7 +35,7 @@ var boydog = function(client) {
           binding.setup();
         } catch (e) {
           if (e instanceof TypeError) {
-            console.log("BoyDog couoldn't connect. Retrying in a few seconds.");
+            console.warn("BoyDog couoldn't connect. Retrying in a few seconds.");
             setTimeout(function() {
               binding.setup(); //Try again if we couldn't bind tags
             }, 3000);
