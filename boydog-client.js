@@ -16,7 +16,7 @@ var boydog = function(client) {
   let connection = new shareDB.Connection(socket);
 
   var restart = function() {
-    utils.normalize();
+    //utils.normalize(); //TODO: Create a normalization that uses ">" as separator
 
     var els = utils.getDogDOMElements();
 
@@ -35,9 +35,7 @@ var boydog = function(client) {
           binding.setup();
         } catch (e) {
           if (e instanceof TypeError) {
-            console.warn(
-              "BoyDog couoldn't connect. Retrying in a few seconds."
-            );
+            console.warn("BoyDog couldn't connect. Retrying in a few seconds.");
             setTimeout(function() {
               binding.setup(); //Try again if we couldn't bind tags
             }, 3000);
