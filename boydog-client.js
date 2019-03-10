@@ -16,7 +16,7 @@ var boydog = function(client) {
   let connection = new shareDB.Connection(socket);
 
   var restart = function() {
-    //utils.normalize(); //TODO: Create a normalization that uses ">" as separator
+    utils.normalizeAll();
 
     var els = utils.getDogDOMElements();
 
