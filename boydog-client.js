@@ -5,15 +5,9 @@
 const $ = require("cash-dom");
 const _ = require("lodash");
 const shareDB = require("sharedb/lib/client");
-const genericBinding = require("sharedb-generic-binding");
-const stringBinding = require("sharedb-string-binding");
+const attributeBinding = require("sharedb-attribute-binding");
 const reconnectingWebSocket = require("reconnecting-websocket");
 const utils = require("./utils.js");
-
-const bindings = {
-  "dog-value": stringBinding,
-  "dog-html": genericBinding
-};
 
 var boydog = function(client) {
   var documentScope = {};
@@ -36,7 +30,7 @@ var boydog = function(client) {
         documentScope[path].subscribe(function(err) {
           if (err) throw err;
 
-          let binding = new bindings[attr](domEl, documentScope[path], [
+          let binding = new attributeBinding(domEl, documentScope[path], [
             "content"
           ]);
 
