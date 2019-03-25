@@ -32,7 +32,7 @@ var boydog = function(client) {
 
           let binding = new attributeBinding(domEl, documentScope[path], [
             "content"
-          ]);
+          ], attr.match(/^dog-([a-zA-Z._-]+)$/)[1]);
 
           try {
             binding.setup();
