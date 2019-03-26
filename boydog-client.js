@@ -30,9 +30,12 @@ var boydog = function(client) {
         documentScope[path].subscribe(function(err) {
           if (err) throw err;
 
-          let binding = new attributeBinding(domEl, documentScope[path], [
-            "content"
-          ], attr.match(/^dog-([a-zA-Z._-]+)$/)[1]);
+          let binding = new attributeBinding(
+            domEl,
+            documentScope[path],
+            ["content"],
+            attr.match(/^dog-([a-zA-Z._-]+)$/)[1]
+          );
 
           try {
             binding.setup();
