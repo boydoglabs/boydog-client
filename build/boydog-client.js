@@ -758,7 +758,7 @@ var boydog = function(client) {
               );
               setTimeout(function() {
                 binding.setup(); //Try again if we couldn't bind tags
-              }, 3000);
+              }, 1500);
             }
           }
         });

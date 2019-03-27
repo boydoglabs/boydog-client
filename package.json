@@ -1,7 +1,7 @@
 {
   "name": "boydog-client",
   "version": "1.1.15",
-  "description": "Build ultra-fast, real-time collaborative webpages in Node.JS + Socket.IO. Client-side module.",
+  "description": "Build real-time collaborative webpages in Node.JS. Client-side module.",
   "main": "boydog.js",
   "scripts": {
     "format": "prettier --write \"./boydog-client.js\" \"./utils.js\"",

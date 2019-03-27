@@ -4,12 +4,12 @@ BoyDog client-side library
 
 > Build real-time collaborative webpages
 
-Status: Alpha
+Status: Working beta
 
 ## Getting started
 
-See *Getting started* section at www.boy.dog. This is the client-side module. Aditionally you requiere to install the [boydog module](https://www.npmjs.com/package/boydog) on your project.
+See *Getting started* section at [boy.dog](www.boy.dog)
 
 ## License
 
-[MIT] © boy.dog
+[MIT] © [boy.dog](www.boy.dog)
