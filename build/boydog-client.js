@@ -714,19 +714,37 @@ process.umask = function() { return 0; };
 
 "use strict";
 
-const $ = require("cash-dom");
+//const $ = require("cash-dom");
 const _ = require("lodash");
+const generateUid = require("uid");
 const shareDB = require("sharedb/lib/client");
 const attributeBinding = require("sharedb-attribute-binding");
 const reconnectingWebSocket = require("reconnecting-websocket");
+const jsCookie = require("js-cookie");
 const utils = require("./utils.js");
 
 var boydog = function(client) {
   var documentScope = {};
   var scope;
 
+  let userId = undefined;
+  let urlStructure = location.pathname.split("/") || [];
+  let monitorIndex = urlStructure.indexOf("boydog-monitor");
+  let monitorHash = urlStructure[monitorIndex + 1] || undefined;
+
+  if (!monitorHash) {
+    userId = jsCookie.get("boydog-uid");
+    if (!userId) {
+      userId = generateUid(16);
+      jsCookie.set("boydog-uid", userId);
+      console.log("setting", userId);
+    }
+  } else {
+    userId = monitorHash;
+  }
+
   if (!client) client = window.location.host;
-  let socket = new reconnectingWebSocket("ws://" + client);
+  let socket = new reconnectingWebSocket(`ws://${client}?userId=${userId}`);
   let connection = new shareDB.Connection(socket);
 
   var restart = function() {
@@ -758,15 +776,18 @@ var boydog = function(client) {
               );
               setTimeout(function() {
                 binding.setup(); //Try again if we couldn't bind tags
-              }, 1500);
+              }, 500);
             }
           }
         });
 
-        documentScope[path].on("op", (op, source) => {
-          //TODO: Add middleware support here
+        //Note: The "on before" is not exactly a "before" operation event, and operations are already applied when the event is triggered. Changing the op inside this event is not useful.
+        //A "op" event is triggered "after" the operation has been applied
+        /*documentScope[path].on("op", (op, source) => {
+          //TODO: Add trigger event support here. It will be an event that is triggered
+          //TODO: Check last two ops and fix caret in case they are exactly the same length, to avoid this issue: https://github.com/ottypes/text/issues/8
           return;
-        });
+        });*/
       });
     });
   };
@@ -781,7 +802,7 @@ var boydog = function(client) {
 
 window.boydog = boydog;
 
-},{"./utils.js":28,"cash-dom":4,"lodash":5,"reconnecting-websocket":11,"sharedb-attribute-binding":13,"sharedb/lib/client":16}],4:[function(require,module,exports){
+},{"./utils.js":30,"js-cookie":5,"lodash":6,"reconnecting-websocket":12,"sharedb-attribute-binding":14,"sharedb/lib/client":17,"uid":29}],4:[function(require,module,exports){
 /* MIT https://github.com/kenwheeler/cash */
 (function(){
 "use strict";
@@ -2082,6 +2103,173 @@ if (typeof exports !== 'undefined') {
 }
 })();
 },{}],5:[function(require,module,exports){
+/*!
+ * JavaScript Cookie v2.2.0
+ * https://github.com/js-cookie/js-cookie
+ *
+ * Copyright 2006, 2015 Klaus Hartl & Fagner Brack
+ * Released under the MIT license
+ */
+;(function (factory) {
+	var registeredInModuleLoader = false;
+	if (typeof define === 'function' && define.amd) {
+		define(factory);
+		registeredInModuleLoader = true;
+	}
+	if (typeof exports === 'object') {
+		module.exports = factory();
+		registeredInModuleLoader = true;
+	}
+	if (!registeredInModuleLoader) {
+		var OldCookies = window.Cookies;
+		var api = window.Cookies = factory();
+		api.noConflict = function () {
+			window.Cookies = OldCookies;
+			return api;
+		};
+	}
+}(function () {
+	function extend () {
+		var i = 0;
+		var result = {};
+		for (; i < arguments.length; i++) {
+			var attributes = arguments[ i ];
+			for (var key in attributes) {
+				result[key] = attributes[key];
+			}
+		}
+		return result;
+	}
+
+	function init (converter) {
+		function api (key, value, attributes) {
+			var result;
+			if (typeof document === 'undefined') {
+				return;
+			}
+
+			// Write
+
+			if (arguments.length > 1) {
+				attributes = extend({
+					path: '/'
+				}, api.defaults, attributes);
+
+				if (typeof attributes.expires === 'number') {
+					var expires = new Date();
+					expires.setMilliseconds(expires.getMilliseconds() + attributes.expires * 864e+5);
+					attributes.expires = expires;
+				}
+
+				// We're using "expires" because "max-age" is not supported by IE
+				attributes.expires = attributes.expires ? attributes.expires.toUTCString() : '';
+
+				try {
+					result = JSON.stringify(value);
+					if (/^[\{\[]/.test(result)) {
+						value = result;
+					}
+				} catch (e) {}
+
+				if (!converter.write) {
+					value = encodeURIComponent(String(value))
+						.replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g, decodeURIComponent);
+				} else {
+					value = converter.write(value, key);
+				}
+
+				key = encodeURIComponent(String(key));
+				key = key.replace(/%(23|24|26|2B|5E|60|7C)/g, decodeURIComponent);
+				key = key.replace(/[\(\)]/g, escape);
+
+				var stringifiedAttributes = '';
+
+				for (var attributeName in attributes) {
+					if (!attributes[attributeName]) {
+						continue;
+					}
+					stringifiedAttributes += '; ' + attributeName;
+					if (attributes[attributeName] === true) {
+						continue;
+					}
+					stringifiedAttributes += '=' + attributes[attributeName];
+				}
+				return (document.cookie = key + '=' + value + stringifiedAttributes);
+			}
+
+			// Read
+
+			if (!key) {
+				result = {};
+			}
+
+			// To prevent the for loop in the first place assign an empty array
+			// in case there are no cookies at all. Also prevents odd result when
+			// calling "get()"
+			var cookies = document.cookie ? document.cookie.split('; ') : [];
+			var rdecode = /(%[0-9A-Z]{2})+/g;
+			var i = 0;
+
+			for (; i < cookies.length; i++) {
+				var parts = cookies[i].split('=');
+				var cookie = parts.slice(1).join('=');
+
+				if (!this.json && cookie.charAt(0) === '"') {
+					cookie = cookie.slice(1, -1);
+				}
+
+				try {
+					var name = parts[0].replace(rdecode, decodeURIComponent);
+					cookie = converter.read ?
+						converter.read(cookie, name) : converter(cookie, name) ||
+						cookie.replace(rdecode, decodeURIComponent);
+
+					if (this.json) {
+						try {
+							cookie = JSON.parse(cookie);
+						} catch (e) {}
+					}
+
+					if (key === name) {
+						result = cookie;
+						break;
+					}
+
+					if (!key) {
+						result[name] = cookie;
+					}
+				} catch (e) {}
+			}
+
+			return result;
+		}
+
+		api.set = api;
+		api.get = function (key) {
+			return api.call(api, key);
+		};
+		api.getJSON = function () {
+			return api.apply({
+				json: true
+			}, [].slice.call(arguments));
+		};
+		api.defaults = {};
+
+		api.remove = function (key, attributes) {
+			api(key, '', extend(attributes, {
+				expires: -1
+			}));
+		};
+
+		api.withConverter = init;
+
+		return api;
+	}
+
+	return init(function () {});
+}));
+
+},{}],6:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -19192,7 +19380,7 @@ if (typeof exports !== 'undefined') {
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // ISC @ Julien Fontanet
 
 'use strict'
@@ -19341,7 +19529,7 @@ function makeError (constructor, super_) {
 exports = module.exports = makeError
 exports.BaseError = BaseError
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // These methods let you build a transform function from a transformComponent
 // function for OT types like JSON0 in which operations are lists of components
 // and transforming them requires N^2 work. I find it kind of nasty that I need
@@ -19421,7 +19609,7 @@ function bootstrapTransform(type, transformComponent, checkValidOp, append) {
   };
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Only the JSON type is exported, because the text type is deprecated
 // otherwise. (If you want to use it somewhere, you're welcome to pull it out
 // into a separate module that json0 can depend on).
@@ -19430,7 +19618,7 @@ module.exports = {
   type: require('./json0')
 };
 
-},{"./json0":9}],9:[function(require,module,exports){
+},{"./json0":10}],10:[function(require,module,exports){
 /*
  This is the implementation of the JSON OT type.
 
@@ -20095,7 +20283,7 @@ json.registerSubtype(text);
 module.exports = json;
 
 
-},{"./bootstrapTransform":7,"./text0":10}],10:[function(require,module,exports){
+},{"./bootstrapTransform":8,"./text0":11}],11:[function(require,module,exports){
 // DEPRECATED!
 //
 // This type works, but is not exported. Its included here because the JSON0
@@ -20353,7 +20541,7 @@ text.invert = function(op) {
 
 require('./bootstrapTransform')(text, transformComponent, checkValidOp, append);
 
-},{"./bootstrapTransform":7}],11:[function(require,module,exports){
+},{"./bootstrapTransform":8}],12:[function(require,module,exports){
 'use strict';
 
 /*! *****************************************************************************
@@ -20881,7 +21069,7 @@ var ReconnectingWebSocket = /** @class */ (function () {
 
 module.exports = ReconnectingWebSocket;
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 module.exports = TextDiffBinding;
 
 function TextDiffBinding(element, attrToSet) {
@@ -21020,7 +21208,7 @@ TextDiffBinding.prototype.update = function() {
   }
 };
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var AttrDiffBinding = require("./attr-diff-binding");
 
 module.exports = StringBinding;
@@ -21141,7 +21329,7 @@ function isSubpath(path, testPath) {
   return true;
 }
 
-},{"./attr-diff-binding":12}],14:[function(require,module,exports){
+},{"./attr-diff-binding":13}],15:[function(require,module,exports){
 (function (process){
 var Doc = require('./doc');
 var Query = require('./query');
@@ -21822,7 +22010,7 @@ Connection.prototype._handleSnapshotFetch = function (error, message) {
 };
 
 }).call(this,require('_process'))
-},{"../emitter":21,"../error":22,"../logger":23,"../types":26,"../util":27,"./doc":15,"./query":17,"./snapshot-request/snapshot-timestamp-request":19,"./snapshot-request/snapshot-version-request":20,"_process":2}],15:[function(require,module,exports){
+},{"../emitter":22,"../error":23,"../logger":24,"../types":27,"../util":28,"./doc":16,"./query":18,"./snapshot-request/snapshot-timestamp-request":20,"./snapshot-request/snapshot-version-request":21,"_process":2}],16:[function(require,module,exports){
 (function (process){
 var emitter = require('../emitter');
 var logger = require('../logger');
@@ -22771,7 +22959,7 @@ function callEach(callbacks, err) {
 }
 
 }).call(this,require('_process'))
-},{"../emitter":21,"../error":22,"../logger":23,"../types":26,"_process":2}],16:[function(require,module,exports){
+},{"../emitter":22,"../error":23,"../logger":24,"../types":27,"_process":2}],17:[function(require,module,exports){
 exports.Connection = require('./connection');
 exports.Doc = require('./doc');
 exports.Error = require('../error');
@@ -22779,7 +22967,7 @@ exports.Query = require('./query');
 exports.types = require('../types');
 exports.logger = require('../logger');
 
-},{"../error":22,"../logger":23,"../types":26,"./connection":14,"./doc":15,"./query":17}],17:[function(require,module,exports){
+},{"../error":23,"../logger":24,"../types":27,"./connection":15,"./doc":16,"./query":18}],18:[function(require,module,exports){
 (function (process){
 var emitter = require('../emitter');
 
@@ -22982,7 +23170,7 @@ Query.prototype._handleExtra = function(extra) {
 };
 
 }).call(this,require('_process'))
-},{"../emitter":21,"_process":2}],18:[function(require,module,exports){
+},{"../emitter":22,"_process":2}],19:[function(require,module,exports){
 var Snapshot = require('../../snapshot');
 var emitter = require('../../emitter');
 
@@ -23038,7 +23226,7 @@ SnapshotRequest.prototype._handleResponse = function (error, message) {
   this.callback(null, snapshot);
 };
 
-},{"../../emitter":21,"../../snapshot":25}],19:[function(require,module,exports){
+},{"../../emitter":22,"../../snapshot":26}],20:[function(require,module,exports){
 var SnapshotRequest = require('./snapshot-request');
 var util = require('../../util');
 
@@ -23066,7 +23254,7 @@ SnapshotTimestampRequest.prototype._message = function () {
   };
 };
 
-},{"../../util":27,"./snapshot-request":18}],20:[function(require,module,exports){
+},{"../../util":28,"./snapshot-request":19}],21:[function(require,module,exports){
 var SnapshotRequest = require('./snapshot-request');
 var util = require('../../util');
 
@@ -23094,7 +23282,7 @@ SnapshotVersionRequest.prototype._message = function () {
   };
 };
 
-},{"../../util":27,"./snapshot-request":18}],21:[function(require,module,exports){
+},{"../../util":28,"./snapshot-request":19}],22:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter;
 
 exports.EventEmitter = EventEmitter;
@@ -23106,7 +23294,7 @@ function mixin(Constructor) {
   }
 }
 
-},{"events":1}],22:[function(require,module,exports){
+},{"events":1}],23:[function(require,module,exports){
 var makeError = require('make-error');
 
 function ShareDBError(code, message) {
@@ -23118,12 +23306,12 @@ makeError(ShareDBError);
 
 module.exports = ShareDBError;
 
-},{"make-error":6}],23:[function(require,module,exports){
+},{"make-error":7}],24:[function(require,module,exports){
 var Logger = require('./logger');
 var logger = new Logger();
 module.exports = logger;
 
-},{"./logger":24}],24:[function(require,module,exports){
+},{"./logger":25}],25:[function(require,module,exports){
 var SUPPORTED_METHODS = [
   'info',
   'warn',
@@ -23146,7 +23334,7 @@ Logger.prototype.setMethods = function (overrides) {
   });
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 module.exports = Snapshot;
 function Snapshot(id, version, type, data, meta) {
   this.id = id;
@@ -23156,7 +23344,7 @@ function Snapshot(id, version, type, data, meta) {
   this.m = meta;
 }
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 
 exports.defaultType = require('ot-json0').type;
 
@@ -23169,7 +23357,7 @@ exports.register = function(type) {
 
 exports.register(exports.defaultType);
 
-},{"ot-json0":8}],27:[function(require,module,exports){
+},{"ot-json0":9}],28:[function(require,module,exports){
 
 exports.doNothing = doNothing;
 function doNothing() {}
@@ -23195,7 +23383,26 @@ exports.isValidTimestamp = function (timestamp) {
   return exports.isValidVersion(timestamp);
 };
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
+/**
+ * Export `uid`
+ */
+
+module.exports = uid;
+
+/**
+ * Create a `uid`
+ *
+ * @param {String} len
+ * @return {String} uid
+ */
+
+function uid(len) {
+  len = len || 7;
+  return Math.random().toString(35).substr(2, len);
+}
+
+},{}],30:[function(require,module,exports){
 "use strict";
 
 const $ = require("cash-dom");
@@ -23236,4 +23443,4 @@ var normalizeAll = function() {
 
 module.exports = { normalizeAll, getDogDOMElements };
 
-},{"cash-dom":4,"lodash":5}]},{},[3]);
+},{"cash-dom":4,"lodash":6}]},{},[3]);

@@ -2,19 +2,37 @@
 
 "use strict";
 
-const $ = require("cash-dom");
+//const $ = require("cash-dom");
 const _ = require("lodash");
+const generateUid = require("uid");
 const shareDB = require("sharedb/lib/client");
 const attributeBinding = require("sharedb-attribute-binding");
 const reconnectingWebSocket = require("reconnecting-websocket");
+const jsCookie = require("js-cookie");
 const utils = require("./utils.js");
 
 var boydog = function(client) {
   var documentScope = {};
   var scope;
 
+  let userId = undefined;
+  let urlStructure = location.pathname.split("/") || [];
+  let monitorIndex = urlStructure.indexOf("boydog-monitor");
+  let monitorHash = urlStructure[monitorIndex + 1] || undefined;
+
+  if (!monitorHash) {
+    userId = jsCookie.get("boydog-uid");
+    if (!userId) {
+      userId = generateUid(16);
+      jsCookie.set("boydog-uid", userId);
+      console.log("setting", userId);
+    }
+  } else {
+    userId = monitorHash;
+  }
+
   if (!client) client = window.location.host;
-  let socket = new reconnectingWebSocket("ws://" + client);
+  let socket = new reconnectingWebSocket(`ws://${client}?userId=${userId}`);
   let connection = new shareDB.Connection(socket);
 
   var restart = function() {
@@ -46,15 +64,18 @@ var boydog = function(client) {
               );
               setTimeout(function() {
                 binding.setup(); //Try again if we couldn't bind tags
-              }, 1500);
+              }, 500);
             }
           }
         });
 
-        documentScope[path].on("op", (op, source) => {
-          //TODO: Add middleware support here
+        //Note: The "on before" is not exactly a "before" operation event, and operations are already applied when the event is triggered. Changing the op inside this event is not useful.
+        //A "op" event is triggered "after" the operation has been applied
+        /*documentScope[path].on("op", (op, source) => {
+          //TODO: Add trigger event support here. It will be an event that is triggered
+          //TODO: Check last two ops and fix caret in case they are exactly the same length, to avoid this issue: https://github.com/ottypes/text/issues/8
           return;
-        });
+        });*/
       });
     });
   };
