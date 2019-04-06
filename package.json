@@ -1,6 +1,6 @@
 {
   "name": "boydog-client",
-  "version": "1.1.15",
+  "version": "1.1.16",
   "description": "Build real-time collaborative webpages in Node.JS. Client-side module.",
   "main": "boydog.js",
   "scripts": {
