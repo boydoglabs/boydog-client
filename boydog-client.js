@@ -25,7 +25,7 @@ var boydog = function(client) {
     if (!userId) {
       userId = generateUid(16);
       jsCookie.set("boydog-uid", userId);
-      console.log("setting", userId);
+      console.log("New boydog userId generated: ", userId);
     }
   } else {
     userId = monitorHash;
@@ -35,13 +35,13 @@ var boydog = function(client) {
   let socket = new reconnectingWebSocket(`ws://${client}?userId=${userId}`);
   let connection = new shareDB.Connection(socket);
 
-  var restart = function() {
+  const restart = function() {
     utils.normalizeAll();
 
     var allElements = utils.getDogDOMElements();
 
     _.each(allElements, (els, attr) => {
-      _.each(els, (domEl, i) => {
+      _.each(els, (domEl) => {
         let path = domEl.getAttribute(attr);
 
         documentScope[path] = connection.get("default", path);
@@ -52,7 +52,7 @@ var boydog = function(client) {
             domEl,
             documentScope[path],
             ["content"],
-            attr.match(/^dog-([a-zA-Z._-]+)$/)[1]
+            attr.match(/^dog-([a-zA-Z._-]+)$/)[1],
           );
 
           try {
@@ -80,7 +80,7 @@ var boydog = function(client) {
     });
   };
 
-  var attach = function(_scope) {
+  const attach = function(_scope) {
     scope = _scope || "html";
     restart();
   };

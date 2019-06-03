@@ -737,7 +737,7 @@ var boydog = function(client) {
     if (!userId) {
       userId = generateUid(16);
       jsCookie.set("boydog-uid", userId);
-      console.log("setting", userId);
+      console.log("New boydog userId generated: ", userId);
     }
   } else {
     userId = monitorHash;
@@ -747,13 +747,13 @@ var boydog = function(client) {
   let socket = new reconnectingWebSocket(`ws://${client}?userId=${userId}`);
   let connection = new shareDB.Connection(socket);
 
-  var restart = function() {
+  const restart = function() {
     utils.normalizeAll();
 
     var allElements = utils.getDogDOMElements();
 
     _.each(allElements, (els, attr) => {
-      _.each(els, (domEl, i) => {
+      _.each(els, (domEl) => {
         let path = domEl.getAttribute(attr);
 
         documentScope[path] = connection.get("default", path);
@@ -764,7 +764,7 @@ var boydog = function(client) {
             domEl,
             documentScope[path],
             ["content"],
-            attr.match(/^dog-([a-zA-Z._-]+)$/)[1]
+            attr.match(/^dog-([a-zA-Z._-]+)$/)[1],
           );
 
           try {
@@ -792,7 +792,7 @@ var boydog = function(client) {
     });
   };
 
-  var attach = function(_scope) {
+  const attach = function(_scope) {
     scope = _scope || "html";
     restart();
   };
@@ -802,308 +802,7 @@ var boydog = function(client) {
 
 window.boydog = boydog;
 
-},{"./utils.js":4,"js-cookie":8,"lodash":9,"reconnecting-websocket":15,"sharedb-attribute-binding":6,"sharedb/lib/client":18,"uid":30}],4:[function(require,module,exports){
-"use strict";
-
-const $ = require("cash-dom");
-const _ = require("lodash");
-const allAttributes = [
-  "dog-id",
-  "dog-class",
-  "dog-value",
-  "dog-html",
-  "dog-click"
-];
-
-//Get All [dog-value, dog-id, etc] as DOM elements
-var getDogDOMElements = function() {
-  let found = {};
-
-  allAttributes.forEach(attr => {
-    let el = $(`[${attr}]`);
-    if (el.length === 0) return;
-    found[attr] = el;
-  });
-
-  return found;
-};
-
-//Normalize all dog attributes like "user[2].name" to "user>2>name" to avoid issues when trying to access fields like "user.2.name"
-var normalizeAll = function() {
-  let els = getDogDOMElements();
-
-  Object.keys(els).forEach(attrName => {
-    els[attrName].each((k, el) => {
-      let newAttr = _.toPath($(el).attr(attrName)).join(">");
-
-      $(el).attr(attrName, newAttr);
-    });
-  });
-};
-
-module.exports = { normalizeAll, getDogDOMElements };
-
-},{"cash-dom":7,"lodash":9}],5:[function(require,module,exports){
-module.exports = TextDiffBinding;
-
-function TextDiffBinding(element, attrToSet) {
-  this.element = element;
-  this.attrToSet = attrToSet;
-  if (attrToSet === "class") {
-    this.originalClasses = element.className;
-  }
-}
-
-TextDiffBinding.prototype._get = TextDiffBinding.prototype._insert = TextDiffBinding.prototype._remove = function() {
-  throw new Error(
-    "`_get()`, `_insert(index, length)`, and `_remove(index, length)` prototype methods must be defined."
-  );
-};
-
-TextDiffBinding.prototype._getElementValue = function() {
-  var value = this.element.value || ""; //Always set the element value no matter what
-  // IE and Opera replace \n with \r\n. Always store strings as \n
-  return value.replace(/\r\n/g, "\n");
-};
-
-TextDiffBinding.prototype._getInputEnd = function(previous, value) {
-  if (this.element !== document.activeElement) return null;
-  var end = value.length - this.element.selectionStart;
-  if (end === 0) return end;
-  if (previous.slice(previous.length - end) !== value.slice(value.length - end))
-    return null;
-  return end;
-};
-
-TextDiffBinding.prototype.onInput = function() {
-  var previous = this._get();
-  var value = this._getElementValue();
-  if (previous === value) return;
-
-  var start = 0;
-  // Attempt to use the DOM cursor position to find the end
-  var end = this._getInputEnd(previous, value);
-  if (end === null) {
-    // If we failed to find the end based on the cursor, do a diff. When
-    // ambiguous, prefer to locate ops at the end of the string, since users
-    // more frequently add or remove from the end of a text input
-    while (previous.charAt(start) === value.charAt(start)) {
-      start++;
-    }
-    end = 0;
-    while (
-      previous.charAt(previous.length - 1 - end) ===
-        value.charAt(value.length - 1 - end) &&
-      end + start < previous.length &&
-      end + start < value.length
-    ) {
-      end++;
-    }
-  } else {
-    while (
-      previous.charAt(start) === value.charAt(start) &&
-      start + end < previous.length &&
-      start + end < value.length
-    ) {
-      start++;
-    }
-  }
-
-  if (previous.length !== start + end) {
-    var removed = previous.slice(start, previous.length - end);
-    this._remove(start, removed);
-  }
-  if (value.length !== start + end) {
-    var inserted = value.slice(start, value.length - end);
-    this._insert(start, inserted);
-  }
-};
-
-TextDiffBinding.prototype.onInsert = function(index, length) {
-  this._transformSelectionAndUpdate(index, length, insertCursorTransform);
-};
-function insertCursorTransform(index, length, cursor) {
-  return index < cursor ? cursor + length : cursor;
-}
-
-TextDiffBinding.prototype.onRemove = function(index, length) {
-  this._transformSelectionAndUpdate(index, length, removeCursorTransform);
-};
-function removeCursorTransform(index, length, cursor) {
-  return index < cursor ? cursor - Math.min(length, cursor - index) : cursor;
-}
-
-TextDiffBinding.prototype._transformSelectionAndUpdate = function(
-  index,
-  length,
-  transformCursor
-) {
-  if (document.activeElement === this.element) {
-    var selectionStart = transformCursor(
-      index,
-      length,
-      this.element.selectionStart
-    );
-    var selectionEnd = transformCursor(
-      index,
-      length,
-      this.element.selectionEnd
-    );
-    var selectionDirection = this.element.selectionDirection;
-    this.update();
-    this.element.setSelectionRange(
-      selectionStart,
-      selectionEnd,
-      selectionDirection
-    );
-  } else {
-    this.update();
-  }
-};
-
-TextDiffBinding.prototype.update = function() {
-  var value = this._get();
-  if (this._getElementValue() === value) return;
-  this.element.value = value;
-
-  //Copy the value to the desired attribute
-  if (typeof this.attrToSet === "function") {
-    this.attrToSet(this.element, value);
-  } else if (typeof this.attrToSet === "string") {
-    if (this.attrToSet === "value") return;
-
-    if (["id", "src", "href", "style"].indexOf(this.attrToSet) >= 0) {
-      this.element.setAttribute(this.attrToSet, value);
-    } else if (this.attrToSet === "html") {
-      this.element.innerHTML = value;
-    } else if (this.attrToSet === "class") {
-      this.element.className = this.originalClasses + " " + value;
-    }
-  }
-};
-
-},{}],6:[function(require,module,exports){
-var AttrDiffBinding = require("./attr-diff-binding");
-
-module.exports = StringBinding;
-
-function StringBinding(element, doc, path, attr) {
-  AttrDiffBinding.call(this, element, attr);
-  this.doc = doc;
-  this.path = path || [];
-  this._opListener = null;
-  this._inputListener = null;
-}
-StringBinding.prototype = Object.create(AttrDiffBinding.prototype);
-StringBinding.prototype.constructor = StringBinding;
-
-StringBinding.prototype.setup = function() {
-  this.update();
-  this.attachDoc();
-  this.attachElement();
-};
-
-StringBinding.prototype.destroy = function() {
-  this.detachElement();
-  this.detachDoc();
-};
-
-StringBinding.prototype.attachElement = function() {
-  var binding = this;
-  this._inputListener = function() {
-    binding.onInput();
-  };
-  this.element.addEventListener("input", this._inputListener, false);
-};
-
-StringBinding.prototype.detachElement = function() {
-  this.element.removeEventListener("input", this._inputListener, false);
-};
-
-StringBinding.prototype.attachDoc = function() {
-  var binding = this;
-  this._opListener = function(op, source) {
-    binding._onOp(op, source);
-  };
-  this.doc.on("op", this._opListener);
-};
-
-StringBinding.prototype.detachDoc = function() {
-  this.doc.removeListener("op", this._opListener);
-};
-
-StringBinding.prototype._onOp = function(op, source) {
-  if (source === this) return;
-  if (op.length === 0) return;
-  if (op.length > 1) {
-    throw new Error("Op with multiple components emitted");
-  }
-  var component = op[0];
-  if (isSubpath(this.path, component.p)) {
-    this._parseInsertOp(component);
-    this._parseRemoveOp(component);
-  } else if (isSubpath(component.p, this.path)) {
-    this._parseParentOp();
-  }
-};
-
-StringBinding.prototype._parseInsertOp = function(component) {
-  if (!component.si) return;
-  var index = component.p[component.p.length - 1];
-  var length = component.si.length;
-  this.onInsert(index, length);
-};
-
-StringBinding.prototype._parseRemoveOp = function(component) {
-  if (!component.sd) return;
-  var index = component.p[component.p.length - 1];
-  var length = component.sd.length;
-  this.onRemove(index, length);
-};
-
-StringBinding.prototype._parseParentOp = function() {
-  this.update();
-};
-
-StringBinding.prototype._get = function() {
-  var value = this.doc.data;
-  for (var i = 0; i < this.path.length; i++) {
-    var segment = this.path[i];
-    value = value[segment];
-  }
-  return value;
-};
-
-StringBinding.prototype._insert = function(index, text) {
-  var path = this.path.concat(index);
-  var op = {
-    p: path,
-    si: text
-  };
-  this.doc.submitOp(op, {
-    source: this
-  });
-};
-
-StringBinding.prototype._remove = function(index, text) {
-  var path = this.path.concat(index);
-  var op = {
-    p: path,
-    sd: text
-  };
-  this.doc.submitOp(op, {
-    source: this
-  });
-};
-
-function isSubpath(path, testPath) {
-  for (var i = 0; i < path.length; i++) {
-    if (testPath[i] !== path[i]) return false;
-  }
-  return true;
-}
-
-},{"./attr-diff-binding":5}],7:[function(require,module,exports){
+},{"./utils.js":28,"js-cookie":5,"lodash":6,"reconnecting-websocket":12,"sharedb-attribute-binding":30,"sharedb/lib/client":15,"uid":27}],4:[function(require,module,exports){
 /* MIT https://github.com/kenwheeler/cash */
 (function(){
 "use strict";
@@ -2403,7 +2102,7 @@ if (typeof exports !== 'undefined') {
   win['cash'] = win['$'] = cash;
 }
 })();
-},{}],8:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 /*!
  * JavaScript Cookie v2.2.0
  * https://github.com/js-cookie/js-cookie
@@ -2570,7 +2269,7 @@ if (typeof exports !== 'undefined') {
 	return init(function () {});
 }));
 
-},{}],9:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 (function (global){
 /**
  * @license
@@ -19681,7 +19380,7 @@ if (typeof exports !== 'undefined') {
 }.call(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 // ISC @ Julien Fontanet
 
 'use strict'
@@ -19830,7 +19529,7 @@ function makeError (constructor, super_) {
 exports = module.exports = makeError
 exports.BaseError = BaseError
 
-},{}],11:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // These methods let you build a transform function from a transformComponent
 // function for OT types like JSON0 in which operations are lists of components
 // and transforming them requires N^2 work. I find it kind of nasty that I need
@@ -19910,7 +19609,7 @@ function bootstrapTransform(type, transformComponent, checkValidOp, append) {
   };
 };
 
-},{}],12:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Only the JSON type is exported, because the text type is deprecated
 // otherwise. (If you want to use it somewhere, you're welcome to pull it out
 // into a separate module that json0 can depend on).
@@ -19919,7 +19618,7 @@ module.exports = {
   type: require('./json0')
 };
 
-},{"./json0":13}],13:[function(require,module,exports){
+},{"./json0":10}],10:[function(require,module,exports){
 /*
  This is the implementation of the JSON OT type.
 
@@ -20584,7 +20283,7 @@ json.registerSubtype(text);
 module.exports = json;
 
 
-},{"./bootstrapTransform":11,"./text0":14}],14:[function(require,module,exports){
+},{"./bootstrapTransform":8,"./text0":11}],11:[function(require,module,exports){
 // DEPRECATED!
 //
 // This type works, but is not exported. Its included here because the JSON0
@@ -20842,7 +20541,7 @@ text.invert = function(op) {
 
 require('./bootstrapTransform')(text, transformComponent, checkValidOp, append);
 
-},{"./bootstrapTransform":11}],15:[function(require,module,exports){
+},{"./bootstrapTransform":8}],12:[function(require,module,exports){
 'use strict';
 
 /*! *****************************************************************************
@@ -21370,7 +21069,7 @@ var ReconnectingWebSocket = /** @class */ (function () {
 
 module.exports = ReconnectingWebSocket;
 
-},{}],16:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function (process){
 var Doc = require('./doc');
 var Query = require('./query');
@@ -22051,7 +21750,7 @@ Connection.prototype._handleSnapshotFetch = function (error, message) {
 };
 
 }).call(this,require('_process'))
-},{"../emitter":23,"../error":24,"../logger":25,"../types":28,"../util":29,"./doc":17,"./query":19,"./snapshot-request/snapshot-timestamp-request":21,"./snapshot-request/snapshot-version-request":22,"_process":2}],17:[function(require,module,exports){
+},{"../emitter":20,"../error":21,"../logger":22,"../types":25,"../util":26,"./doc":14,"./query":16,"./snapshot-request/snapshot-timestamp-request":18,"./snapshot-request/snapshot-version-request":19,"_process":2}],14:[function(require,module,exports){
 (function (process){
 var emitter = require('../emitter');
 var logger = require('../logger');
@@ -23000,7 +22699,7 @@ function callEach(callbacks, err) {
 }
 
 }).call(this,require('_process'))
-},{"../emitter":23,"../error":24,"../logger":25,"../types":28,"_process":2}],18:[function(require,module,exports){
+},{"../emitter":20,"../error":21,"../logger":22,"../types":25,"_process":2}],15:[function(require,module,exports){
 exports.Connection = require('./connection');
 exports.Doc = require('./doc');
 exports.Error = require('../error');
@@ -23008,7 +22707,7 @@ exports.Query = require('./query');
 exports.types = require('../types');
 exports.logger = require('../logger');
 
-},{"../error":24,"../logger":25,"../types":28,"./connection":16,"./doc":17,"./query":19}],19:[function(require,module,exports){
+},{"../error":21,"../logger":22,"../types":25,"./connection":13,"./doc":14,"./query":16}],16:[function(require,module,exports){
 (function (process){
 var emitter = require('../emitter');
 
@@ -23211,7 +22910,7 @@ Query.prototype._handleExtra = function(extra) {
 };
 
 }).call(this,require('_process'))
-},{"../emitter":23,"_process":2}],20:[function(require,module,exports){
+},{"../emitter":20,"_process":2}],17:[function(require,module,exports){
 var Snapshot = require('../../snapshot');
 var emitter = require('../../emitter');
 
@@ -23267,7 +22966,7 @@ SnapshotRequest.prototype._handleResponse = function (error, message) {
   this.callback(null, snapshot);
 };
 
-},{"../../emitter":23,"../../snapshot":27}],21:[function(require,module,exports){
+},{"../../emitter":20,"../../snapshot":24}],18:[function(require,module,exports){
 var SnapshotRequest = require('./snapshot-request');
 var util = require('../../util');
 
@@ -23295,7 +22994,7 @@ SnapshotTimestampRequest.prototype._message = function () {
   };
 };
 
-},{"../../util":29,"./snapshot-request":20}],22:[function(require,module,exports){
+},{"../../util":26,"./snapshot-request":17}],19:[function(require,module,exports){
 var SnapshotRequest = require('./snapshot-request');
 var util = require('../../util');
 
@@ -23323,7 +23022,7 @@ SnapshotVersionRequest.prototype._message = function () {
   };
 };
 
-},{"../../util":29,"./snapshot-request":20}],23:[function(require,module,exports){
+},{"../../util":26,"./snapshot-request":17}],20:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter;
 
 exports.EventEmitter = EventEmitter;
@@ -23335,7 +23034,7 @@ function mixin(Constructor) {
   }
 }
 
-},{"events":1}],24:[function(require,module,exports){
+},{"events":1}],21:[function(require,module,exports){
 var makeError = require('make-error');
 
 function ShareDBError(code, message) {
@@ -23347,12 +23046,12 @@ makeError(ShareDBError);
 
 module.exports = ShareDBError;
 
-},{"make-error":10}],25:[function(require,module,exports){
+},{"make-error":7}],22:[function(require,module,exports){
 var Logger = require('./logger');
 var logger = new Logger();
 module.exports = logger;
 
-},{"./logger":26}],26:[function(require,module,exports){
+},{"./logger":23}],23:[function(require,module,exports){
 var SUPPORTED_METHODS = [
   'info',
   'warn',
@@ -23375,7 +23074,7 @@ Logger.prototype.setMethods = function (overrides) {
   });
 };
 
-},{}],27:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 module.exports = Snapshot;
 function Snapshot(id, version, type, data, meta) {
   this.id = id;
@@ -23385,7 +23084,7 @@ function Snapshot(id, version, type, data, meta) {
   this.m = meta;
 }
 
-},{}],28:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 
 exports.defaultType = require('ot-json0').type;
 
@@ -23398,7 +23097,7 @@ exports.register = function(type) {
 
 exports.register(exports.defaultType);
 
-},{"ot-json0":12}],29:[function(require,module,exports){
+},{"ot-json0":9}],26:[function(require,module,exports){
 
 exports.doNothing = doNothing;
 function doNothing() {}
@@ -23424,7 +23123,7 @@ exports.isValidTimestamp = function (timestamp) {
   return exports.isValidVersion(timestamp);
 };
 
-},{}],30:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 /**
  * Export `uid`
  */
@@ -23443,4 +23142,323 @@ function uid(len) {
   return Math.random().toString(35).substr(2, len);
 }
 
-},{}]},{},[3]);
+},{}],28:[function(require,module,exports){
+"use strict";
+
+const $ = require("cash-dom");
+const _ = require("lodash");
+const allAttributes = [
+  "dog-id",
+  "dog-class",
+  "dog-value",
+  "dog-html",
+  "dog-click"
+];
+
+//Get All [dog-value, dog-id, etc] as DOM elements
+var getDogDOMElements = function() {
+  let found = {};
+
+  allAttributes.forEach(attr => {
+    let el = $(`[${attr}]`);
+    if (el.length === 0) return;
+    found[attr] = el;
+  });
+
+  return found;
+};
+
+//Normalize all dog attributes like "user[2].name" to "user>2>name" to avoid issues when trying to access fields like "user.2.name"
+var normalizeAll = function() {
+  let els = getDogDOMElements();
+
+  Object.keys(els).forEach(attrName => {
+    els[attrName].each((k, el) => {
+      let newAttr = _.toPath($(el).attr(attrName)).join(">");
+
+      $(el).attr(attrName, newAttr);
+    });
+  });
+};
+
+module.exports = { normalizeAll, getDogDOMElements };
+
+},{"cash-dom":4,"lodash":6}],29:[function(require,module,exports){
+module.exports = TextDiffBinding;
+
+function TextDiffBinding(element, attrToSet, events) {
+  this.element = element;
+  this.attrToSet = attrToSet;
+  this.events = events; //TODO
+  this.lastOp = { cursor: undefined, index: undefined, length: undefined, transformCursor: (function() {}) }; //Set last operation mock
+  if (attrToSet === "class") {
+    this.originalClasses = element.className;
+  }
+}
+
+TextDiffBinding.prototype._get = TextDiffBinding.prototype._insert = TextDiffBinding.prototype._remove = function() {
+  throw new Error(
+    "`_get()`, `_insert(index, length)`, and `_remove(index, length)` prototype methods must be defined."
+  );
+};
+
+TextDiffBinding.prototype._getElementValue = function() {
+  var value = this.element.value || ""; //Always set the element value no matter what
+  // IE and Opera replace \n with \r\n. Always store strings as \n
+  return value.replace(/\r\n/g, "\n");
+};
+
+TextDiffBinding.prototype._getInputEnd = function(previous, value) {
+  if (this.element !== document.activeElement) return null;
+  var end = value.length - this.element.selectionStart;
+  if (end === 0) return end;
+  if (previous.slice(previous.length - end) !== value.slice(value.length - end))
+    return null;
+  return end;
+};
+
+TextDiffBinding.prototype.onInput = function() {
+  var previous = this._get();
+  var value = this._getElementValue();
+  if (previous === value) return;
+
+  var start = 0;
+  // Attempt to use the DOM cursor position to find the end
+  var end = this._getInputEnd(previous, value);
+  if (end === null) {
+    // If we failed to find the end based on the cursor, do a diff. When
+    // ambiguous, prefer to locate ops at the end of the string, since users
+    // more frequently add or remove from the end of a text input
+    while (previous.charAt(start) === value.charAt(start)) {
+      start++;
+    }
+    end = 0;
+    while (
+      previous.charAt(previous.length - 1 - end) ===
+        value.charAt(value.length - 1 - end) &&
+      end + start < previous.length &&
+      end + start < value.length
+    ) {
+      end++;
+    }
+  } else {
+    while (
+      previous.charAt(start) === value.charAt(start) &&
+      start + end < previous.length &&
+      start + end < value.length
+    ) {
+      start++;
+    }
+  }
+
+  if (previous.length !== start + end) {
+    var removed = previous.slice(start, previous.length - end);
+    this._remove(start, removed);
+  }
+  if (value.length !== start + end) {
+    var inserted = value.slice(start, value.length - end);
+    this._insert(start, inserted);
+  }
+};
+
+TextDiffBinding.prototype.onInsert = function(index, length) {
+  this._transformSelectionAndUpdate(index, length, insertCursorTransform);
+};
+function insertCursorTransform(index, length, cursor) {
+  return index < cursor ? cursor + length : cursor;
+}
+
+TextDiffBinding.prototype.onRemove = function(index, length) {
+  this._transformSelectionAndUpdate(index, length, removeCursorTransform);
+};
+function removeCursorTransform(index, length, cursor) {
+  return index < cursor ? cursor - Math.min(length, cursor - index) : cursor;
+}
+
+TextDiffBinding.prototype._transformSelectionAndUpdate = function(
+  index,
+  length,
+  transformCursor
+) {
+  if (document.activeElement === this.element) {
+
+    let restoreCursorTo;
+    let currentOp = { cursor: this.element.selectionStart, index, length, transformCursor };
+
+    if ((this.lastOp.transformCursor.name === "removeCursorTransform") && (currentOp.transformCursor.name === "insertCursorTransform") //If the last operation was a remove
+      && (this.lastOp.cursor > currentOp.index) //And it is in the range of the cursor
+      && (this.lastOp.index === currentOp.index) //And it is an actual replacement because both start at the same index
+    ) {
+      restoreCursorTo = this.lastOp.cursor; //Save where the cursor was
+    }
+
+    this.lastOp = currentOp; //Set last op
+
+    var selectionStart = transformCursor(
+      index,
+      length,
+      this.element.selectionStart
+    );
+    var selectionEnd = transformCursor(
+      index,
+      length,
+      this.element.selectionEnd
+    );
+    var selectionDirection = this.element.selectionDirection;
+    this.update();
+    this.element.setSelectionRange(
+      selectionStart,
+      selectionEnd,
+      selectionDirection
+    );
+    
+    if (restoreCursorTo) this.element.setSelectionRange(restoreCursorTo, restoreCursorTo); //Restore cursor in the event of a replacement (a `removeCursorTransform` followed by a `insertCursorTransform`)
+  } else {
+    this.update();
+  }
+};
+
+TextDiffBinding.prototype.update = function() {
+  let value = this._get();
+
+  if (this._getElementValue() === value) return;
+  this.element.value = value; //Set the element value (even if it is not an input)
+
+  //Copy the value to the desired attribute
+  if (typeof this.attrToSet === "function") {
+    this.attrToSet(this.element, value);
+  } else if (typeof this.attrToSet === "string") {
+    if (this.attrToSet === "value") return;
+
+    if (["id", "src", "href", "style"].indexOf(this.attrToSet) >= 0) {
+      this.element.setAttribute(this.attrToSet, value);
+    } else if (this.attrToSet === "html") {
+      this.element.innerHTML = value;
+    } else if (this.attrToSet === "class") {
+      this.element.className = this.originalClasses + " " + value;
+    }
+  }
+};
+
+},{}],30:[function(require,module,exports){
+const AttrDiffBinding = require("./attr-diff-binding");
+
+module.exports = StringBinding;
+
+function StringBinding(element, doc, path, attr, events) {
+  AttrDiffBinding.call(this, element, attr, events);
+  this.doc = doc;
+  this.path = path || [];
+  this._opListener = null;
+  this._inputListener = null;
+}
+StringBinding.prototype = Object.create(AttrDiffBinding.prototype);
+StringBinding.prototype.constructor = StringBinding;
+
+StringBinding.prototype.setup = function() {
+  this.update();
+  this.attachDoc();
+  this.attachElement();
+};
+
+StringBinding.prototype.destroy = function() {
+  this.detachElement();
+  this.detachDoc();
+};
+
+StringBinding.prototype.attachElement = function() {
+  var binding = this;
+  this._inputListener = function() {
+    binding.onInput();
+  };
+  this.element.addEventListener("input", this._inputListener, false);
+};
+
+StringBinding.prototype.detachElement = function() {
+  this.element.removeEventListener("input", this._inputListener, false);
+};
+
+StringBinding.prototype.attachDoc = function() {
+  var binding = this;
+  this._opListener = function(op, source) {
+    binding._onOp(op, source);
+  };
+  this.doc.on("op", this._opListener);
+};
+
+StringBinding.prototype.detachDoc = function() {
+  this.doc.removeListener("op", this._opListener);
+};
+
+StringBinding.prototype._onOp = function(op, source) {
+  if (source === this) return;
+  if (op.length === 0) return;
+  if (op.length > 1) {
+    throw new Error("Op with multiple components emitted");
+  }
+  var component = op[0];
+  if (isSubpath(this.path, component.p)) {
+    this._parseInsertOp(component);
+    this._parseRemoveOp(component);
+  } else if (isSubpath(component.p, this.path)) {
+    this._parseParentOp();
+  }
+};
+
+StringBinding.prototype._parseInsertOp = function(component) {
+  if (!component.si) return;
+  var index = component.p[component.p.length - 1];
+  var length = component.si.length;
+  this.onInsert(index, length);
+};
+
+StringBinding.prototype._parseRemoveOp = function(component) {
+  if (!component.sd) return;
+  var index = component.p[component.p.length - 1];
+  var length = component.sd.length;
+  this.onRemove(index, length);
+};
+
+StringBinding.prototype._parseParentOp = function() {
+  this.update();
+};
+
+StringBinding.prototype._get = function() {
+  var value = this.doc.data;
+  for (var i = 0; i < this.path.length; i++) {
+    var segment = this.path[i];
+    value = value[segment];
+  }
+  return value;
+};
+
+StringBinding.prototype._insert = function(index, text) {
+  var path = this.path.concat(index);
+  var op = {
+    p: path,
+    si: text
+  };
+  this.doc.submitOp(op, {
+    source: this
+  });
+};
+
+StringBinding.prototype._remove = function(index, text) {
+  var path = this.path.concat(index);
+  var op = {
+    p: path,
+    sd: text
+  };
+  this.doc.submitOp(op, {
+    source: this
+  });
+};
+
+function isSubpath(path, testPath) {
+  for (var i = 0; i < path.length; i++) {
+    if (testPath[i] !== path[i]) return false;
+  }
+  return true;
+}
+
+},{"./attr-diff-binding":29}]},{},[3]);
