@@ -1,3 +1,5 @@
+> IMPORTANT: This module is deprecated. Use 'boydog' from now on as it includes both the server and front libraries.
+
 # boydog-client
 
 BoyDog client-side library
